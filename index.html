@@ -1,0 +1,1682 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="الاقتباسات">
+<title>مستخرج الاقتباسات الذكي</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400;1,700&family=Aref+Ruqaa:wght@400;700&family=Noto+Naskh+Arabic:wght@400;700&family=Scheherazade+New:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,'SF Arabic',system-ui,sans-serif;background:#f8f9fa;color:#1a1a1a;padding:16px;padding-top:max(16px,env(safe-area-inset-top));padding-bottom:max(16px,env(safe-area-inset-bottom));min-height:100vh}
+.hidden{display:none !important}
+#errBanner{position:fixed;top:0;left:0;right:0;background:#c53030;color:#fff;padding:10px;font-size:12px;z-index:9999;display:none;white-space:pre-wrap;max-height:200px;overflow-y:auto;font-family:monospace;direction:ltr;text-align:left}
+h1{font-size:18px;text-align:center;margin-bottom:16px;font-weight:700}
+.field{width:100%;padding:12px 14px;font-size:14px;border:1px solid #cbd5e0;border-radius:10px;background:#fff;margin-bottom:10px;font-family:inherit;direction:rtl}
+.field:focus{outline:2px solid #2b6cb0;border-color:transparent}
+.row{display:flex;gap:8px;margin-bottom:10px}
+.btn{flex:1;padding:12px;font-size:14px;font-weight:700;border:none;border-radius:10px;color:#fff;font-family:inherit;cursor:pointer;transition:transform .1s}
+.btn:active{transform:scale(.97)}
+.btn:disabled{opacity:.5}
+.btn-dark{background:#4a5568}.btn-blue{background:#2b6cb0}.btn-purple{background:#805ad5}.btn-green{background:#2f855a}.btn-red{background:#c53030}.btn-gray{background:#718096}.btn-gold{background:#b8945a}.btn-pink{background:#b83280}.btn-teal{background:#2c7a7b}.btn-orange{background:#c05621}
+.status{text-align:center;font-size:12px;color:#718096;padding:8px;min-height:30px}
+.status.ok{color:#2f855a;font-weight:700}.status.err{color:#c53030;font-weight:700}
+.quotes{margin-top:12px}
+.card{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:14px;margin-bottom:10px}
+.card-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.star{font-size:24px;background:none;border:none;cursor:pointer;color:#a0aec0;padding:0;line-height:1}
+.star.on{color:#d69e2e}
+.q-num{font-weight:700;font-size:14px;color:#2b6cb0}
+.q-text{font-size:15px;line-height:1.9;text-align:right;color:#1a1a1a;margin-bottom:12px;white-space:pre-wrap}
+.card-actions{display:flex;gap:6px}
+.card-actions .btn{font-size:12px;padding:8px}
+.modal{position:fixed;inset:0;background:#f8f9fa;z-index:100;padding:16px;padding-top:max(16px,env(safe-area-inset-top));overflow-y:auto}
+.modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.modal-head h2{font-size:18px}
+.filter-row{display:flex;gap:8px;margin-bottom:12px}
+.filter-row .btn{padding:10px;font-size:13px}
+.toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%) translateY(100px);background:rgba(0,0,0,.9);color:#fff;padding:12px 20px;border-radius:10px;font-size:13px;z-index:999;transition:transform .3s;max-width:90%;text-align:center}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.progress{background:#e2e8f0;border-radius:8px;height:6px;overflow:hidden;margin:8px 0}
+.progress-bar{background:#2b6cb0;height:100%;width:0;transition:width .3s}
+.img-preview{position:fixed;inset:0;background:rgba(0,0,0,.95);z-index:300;display:flex;align-items:center;justify-content:center;padding:12px;flex-direction:column;gap:12px;overflow-y:auto}
+.img-preview img{max-width:100%;max-height:38vh;border-radius:12px;box-shadow:0 10px 40px rgba(0,0,0,.5)}
+.img-preview .btn{max-width:200px}
+.style-picker{display:flex;gap:6px;max-width:100%;flex-wrap:wrap;justify-content:center}
+.style-chip{padding:6px 10px;border-radius:20px;font-size:11px;border:2px solid rgba(255,255,255,.3);background:rgba(255,255,255,.1);color:#fff;cursor:pointer;font-family:inherit}
+.style-chip.active{background:#b8945a;border-color:#b8945a;font-weight:700}
+.style-chip:disabled{opacity:.5;cursor:wait}
+#editPanel{width:100%;max-width:400px;display:flex;flex-direction:column;gap:10px}
+#editTextarea{width:100%;height:110px;padding:12px;border-radius:10px;border:1px solid #4a5568;background:#1a202c;color:#fff;font-size:15px;font-family:inherit;direction:rtl;line-height:1.7;resize:vertical}
+.preview-actions{display:flex;gap:8px;width:100%;max-width:500px;flex-wrap:wrap;justify-content:center}
+.preview-actions .btn{padding:10px;font-size:13px;flex:1;min-width:90px}
+.toggle-row{display:flex;gap:8px;width:100%;flex-wrap:wrap}
+.toggle-btn{flex:1;padding:12px 6px;border-radius:10px;border:2px solid #718096;background:rgba(255,255,255,.1);color:#cbd5e0;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;appearance:none;user-select:none;touch-action:manipulation;transition:all .15s;min-height:48px;min-width:100px}
+.toggle-btn:active{transform:scale(.96)}
+.toggle-btn.on{background:#2f855a;border-color:#2f855a;color:#fff}
+.toggle-btn.off{background:#718096;border-color:#718096;color:#fff}
+.toggle-btn:disabled{opacity:.5}
+.orientation-row{display:flex;gap:6px;width:100%;max-width:420px}
+.orient-btn{flex:1;padding:10px 6px;border-radius:10px;border:2px solid #718096;background:rgba(255,255,255,.05);color:#cbd5e0;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;transition:all .15s}
+.orient-btn.on{background:#2b6cb0;border-color:#2b6cb0;color:#fff}
+.orient-btn:active{transform:scale(.96)}
+.video-overlay{position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:400;display:flex;align-items:center;justify-content:center;padding:20px;overflow-y:auto}
+.video-box{background:#1a202c;color:#fff;padding:20px;border-radius:16px;max-width:400px;width:100%;text-align:center}
+.video-box h3{font-size:16px;margin-bottom:12px}
+.video-box p{font-size:13px;opacity:.8;margin-bottom:16px;line-height:1.7}
+.video-progress{background:rgba(255,255,255,.1);border-radius:10px;height:10px;overflow:hidden;margin:16px 0}
+.video-progress-bar{background:linear-gradient(90deg,#b83280,#b8945a);height:100%;width:0;transition:width .3s}
+.video-percent{font-size:22px;font-weight:700;margin-bottom:8px;color:#b8945a}
+.video-status{font-size:12px;opacity:.7}
+#videoPlayer{width:100%;max-height:50vh;border-radius:12px;margin-bottom:14px;background:#000}
+#videoFallback{width:100%;max-height:50vh;border-radius:12px;margin-bottom:14px;object-fit:contain}
+.video-hint{font-size:11px;opacity:.75;margin-top:14px;line-height:1.7;color:#cbd5e0}
+.video-btn-row{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.video-btn-row .btn{flex:1;min-width:110px;max-width:none;padding:12px;font-size:13px}
+.format-badge{display:inline-block;padding:4px 10px;border-radius:8px;font-size:11px;font-weight:700;margin-bottom:10px}
+.format-badge.ok{background:rgba(47,133,90,.2);color:#68d391}
+.format-badge.warn{background:rgba(214,158,46,.2);color:#f6e05e}
+.duration-info{font-size:12px;opacity:.75;margin-bottom:12px;color:#cbd5e0}
+</style>
+</head>
+<body>
+
+<div id="errBanner" onclick="this.style.display='none'">⚠️ خطأ: <span id="errText"></span></div>
+
+<div id="main">
+  <h1>✨ استخراج اقتباسات ذكي</h1>
+  <input id="apiKey" class="field" type="password" placeholder="مفتاح OpenRouter (sk-or-v1-...)">
+  <input id="bookName" class="field" type="text" placeholder="اسم الكتاب (اختياري)">
+  <input id="authorName" class="field" type="text" placeholder="اسم المؤلف (اختياري)">
+  <button id="pickPdfBtn" class="btn btn-dark" style="width:100%;margin-bottom:10px;">📕 اختيار ملف PDF</button>
+  <input id="pdfInput" type="file" accept=".pdf" style="display:none;">
+  <div class="row">
+    <button id="countBtn" class="btn btn-gray">🔢 5</button>
+    <button id="styleBtn" class="btn btn-gold">🎨 نسخي</button>
+    <button id="libBtn" class="btn btn-purple">📚 المكتبة</button>
+  </div>
+  <button id="genBtn" class="btn btn-blue" style="width:100%;">استخراج ✨</button>
+  <div id="status" class="status">ارفع ملف PDF للبدء</div>
+  <div id="progressWrap" class="progress hidden"><div id="progressBar" class="progress-bar"></div></div>
+  <div id="quotes" class="quotes"></div>
+</div>
+
+<div id="library" class="modal hidden">
+  <div class="modal-head">
+    <h2>📚 مكتبة الاقتباسات</h2>
+    <button onclick="closeLibrary()" style="background:none;border:none;font-size:16px;color:#2b6cb0;cursor:pointer;">إغلاق</button>
+  </div>
+  <div class="filter-row">
+    <button id="filterAll" class="btn btn-purple">الكل</button>
+    <button id="filterFav" class="btn btn-gray">⭐ المفضلة</button>
+  </div>
+  <div id="libCount" style="text-align:center;font-size:12px;color:#718096;margin-bottom:12px;"></div>
+  <div id="libList"></div>
+</div>
+
+<div id="imgPreview" class="img-preview hidden">
+  <div class="style-picker">
+    <button type="button" class="style-chip" data-style="naskh">📜 نسخي</button>
+    <button type="button" class="style-chip" data-style="oriental">🌙 شرقي</button>
+    <button type="button" class="style-chip" data-style="classic">🏛️ كلاسيكي</button>
+    <button type="button" class="style-chip" data-style="modern">⚡ حديث</button>
+    <button type="button" class="style-chip" data-style="islamic">🕌 إسلامي</button>
+    <button type="button" class="style-chip" data-style="night">🌌 ليلي</button>
+    <button type="button" class="style-chip" data-style="news">📰 خبر</button>
+    <button type="button" class="style-chip" data-style="emerald">💡 نصيحة</button>
+    <button type="button" class="style-chip" data-style="sunset">🌅 غروب</button>
+    <button type="button" class="style-chip" data-style="ocean">🌊 محيط</button>
+    <button type="button" class="style-chip" data-style="royal">👑 ملكي</button>
+    <button type="button" class="style-chip" data-style="sand">🏜️ رملي</button>
+    <button type="button" class="style-chip" data-style="lightgold">🪙 ذهبي فاتح</button>
+  </div>
+
+  <div class="orientation-row">
+    <button type="button" id="orientPortrait" class="orient-btn on">📱 طولي</button>
+    <button type="button" id="orientLandscape" class="orient-btn">🖥️ عرضي</button>
+  </div>
+
+  <img id="previewImg" alt="preview">
+  <div id="editPanel" class="hidden">
+    <textarea id="editTextarea" placeholder="عدّل النص هنا..."></textarea>
+    <div class="toggle-row">
+      <button type="button" id="toggleQuoteBtn" class="toggle-btn on">❝ علامة</button>
+      <button type="button" id="toggleBookBtn" class="toggle-btn on">📖 الكتاب</button>
+      <button type="button" id="toggleAuthorBtn" class="toggle-btn on">✍ المؤلف</button>
+    </div>
+  </div>
+  <label class="duration-info" style="width:100%;max-width:420px;">
+    🌑 تعتيم الخلفية
+    <input id="overlayRange" type="range" min="0" max="90" value="45" style="width:100%;">
+  </label>
+  <input id="bgInput" type="file" accept="image/*" style="display:none;">
+  <div class="preview-actions">
+    <button type="button" id="editQuoteBtn" class="btn btn-purple">✏️ تعديل</button>
+    <button type="button" id="durationBtn" class="btn btn-teal">⏱️ 10 ث</button>
+    <button type="button" id="animationBtn" class="btn btn-orange">✍️ كلمة</button>
+    <button type="button" id="videoBtn" class="btn btn-pink">🎬 فيديو</button>
+    <button type="button" id="regenBtn" class="btn btn-green hidden">🎨 توليد</button>
+    <button type="button" id="saveBothBtn" class="btn btn-gold">📐 حفظ الاثنين</button>
+    <button type="button" id="shareImgBtn" class="btn btn-blue">📤 مشاركة</button>
+    <button type="button" id="bgBtn" class="btn btn-dark">🖼️ خلفية</button>
+    <button type="button" id="xShareBtn" class="btn btn-dark">🐦 X</button>
+    <button type="button" onclick="closePreview()" class="btn btn-red">إغلاق</button>
+  </div>
+</div>
+
+<div id="videoOverlay" class="video-overlay hidden">
+  <div class="video-box">
+    <h3>🎬 جاري توليد الفيديو...</h3>
+    <p id="videoDurationInfo" class="duration-info"></p>
+    <div class="video-percent" id="videoPercent">0%</div>
+    <div class="video-progress"><div class="video-progress-bar" id="videoProgressBar"></div></div>
+    <div class="video-status" id="videoStatus">بدء...</div>
+  </div>
+</div>
+
+<div id="videoPreview" class="video-overlay hidden">
+  <div class="video-box">
+    <h3>🎬 الفيديو جاهز</h3>
+    <div id="formatBadge" class="format-badge ok"></div>
+    <video id="videoPlayer" controls playsinline style="display:none;"></video>
+    <img id="videoFallback" alt="preview" style="display:none;">
+    <div class="video-btn-row">
+      <button type="button" id="shareVideoBtn" class="btn btn-blue">📤 مشاركة</button>
+      <button type="button" id="downloadVideoBtn" class="btn btn-gold">💾 حفظ في الملفات</button>
+      <button type="button" id="closeVideoBtn" class="btn btn-red">إغلاق</button>
+    </div>
+    <p class="video-hint" id="videoHint"></p>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+function showErr(msg){try{document.getElementById('errText').textContent=String(msg).substring(0,500);document.getElementById('errBanner').style.display='block'}catch(e){}}
+window.addEventListener('error',function(ev){showErr((ev.message||'unknown')+' @ '+(ev.filename||'')+':'+(ev.lineno||''))});
+window.addEventListener('unhandledrejection',function(ev){showErr('Promise: '+(ev.reason&&ev.reason.message?ev.reason.message:ev.reason))});
+'use strict';
+
+let pdfjsReady=false;
+try{if(typeof pdfjsLib!=='undefined'&&pdfjsLib.GlobalWorkerOptions){pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';pdfjsReady=true}}catch(e){showErr('pdfjs init: '+e.message)}
+
+const STORAGE_KEY='quotes_library_v1';
+const API_KEY_STORAGE='quotes_api_key';
+const AUTHOR_STORAGE='quotes_author';
+const STYLE_STORAGE='quotes_style';
+const VARIANT_STORAGE='quotes_variant_index';
+const DURATION_STORAGE='quotes_video_duration';
+const ANIMATION_STORAGE='quotes_video_animation';
+const ORIENTATION_STORAGE='quotes_orientation';
+
+const STYLE_NAMES={
+  naskh:'📜 نسخي فاخر',oriental:'🌙 شرقي',classic:'🏛️ كلاسيكي',modern:'⚡ حديث',
+  islamic:'🕌 إسلامي مزخرف',night:'🌌 ليلي بنجوم',news:'📰 خبر عاجل',emerald:'💡 نصيحة زمردي',
+  sunset:'🌅 غروب ذهبي',ocean:'🌊 محيط عميق',royal:'👑 ملكي فاخر',sand:'🏜️ رملي دافئ',
+  lightgold:'🪙 ذهبي فاتح'
+};
+const STYLE_ORDER=['naskh','oriental','classic','modern','islamic','night','news','emerald','sunset','ocean','royal','sand','lightgold'];
+
+const DURATION_OPTIONS=[5,10,15,20,30];
+const ANIM_WORD='word',ANIM_LINE='line',ANIM_FADE='fade';
+const ANIMATION_OPTIONS=[ANIM_WORD,ANIM_LINE,ANIM_FADE];
+const ANIMATION_LABELS={[ANIM_WORD]:'✍️ كلمة',[ANIM_LINE]:'📝 سطر',[ANIM_FADE]:'✨ تدريجي'};
+const ANIMATION_NAMES={[ANIM_WORD]:'كلمة بكلمة',[ANIM_LINE]:'سطر بسطر',[ANIM_FADE]:'تدريجي كامل'};
+
+const FONT_FAMILY="Amiri, 'Noto Naskh Arabic', 'Scheherazade New', Georgia, serif";
+const FONT_FAMILY_B="'Aref Ruqaa', Amiri, 'Scheherazade New', Georgia, serif";
+const FONT_FAMILY_C="'Scheherazade New', Amiri, Georgia, serif";
+
+const SIZE_PORTRAIT={W:1080,H:1920};
+const SIZE_LANDSCAPE={W:1920,H:1080};
+
+let variantCounter=0;
+try{variantCounter=parseInt(localStorage.getItem(VARIANT_STORAGE)||'0',10)}catch(e){}
+function nextVariant(total){variantCounter=(variantCounter+1)%(total*1000);try{localStorage.setItem(VARIANT_STORAGE,String(variantCounter))}catch(e){}return variantCounter%total}
+
+let generateLock=false,generateId=0,videoLock=false;
+
+let state={
+  pdfFile:null,pdfText:'',pdfName:'',authorName:'',
+  quotes:[],quoteCount:5,library:[],currentHeader:'',
+  busy:false,imageStyle:'naskh',
+  currentImageText:'',currentImageBlob:null,
+  editMode:false,editedText:'',
+  showQuote:true,showBook:true,showAuthor:true,
+  currentVariantIdx:null,
+  currentVideoBlob:null,currentVideoMime:'',currentVideoUrl:'',
+  lastFrameDataUrl:'',videoDuration:10,animationType:ANIM_WORD,bgDataUrl:'',overlayOpacity:0.45,
+  orientation:'portrait'
+};
+
+let fontsReady=false;
+async function ensureFonts(){
+  if(fontsReady)return;
+  try{
+    if(typeof document.fonts==='undefined'||!document.fonts.load){fontsReady=true;return}
+    await Promise.all([
+      document.fonts.load('400 40px Amiri').catch(()=>null),
+      document.fonts.load('700 40px Amiri').catch(()=>null),
+      document.fonts.load('400 40px "Noto Naskh Arabic"').catch(()=>null),
+      document.fonts.load('700 40px "Noto Naskh Arabic"').catch(()=>null),
+      document.fonts.load('400 40px "Aref Ruqaa"').catch(()=>null),
+      document.fonts.load('700 40px "Aref Ruqaa"').catch(()=>null),
+      document.fonts.load('400 40px "Scheherazade New"').catch(()=>null),
+      document.fonts.load('700 40px "Scheherazade New"').catch(()=>null)
+    ]);
+    try{await document.fonts.ready}catch(e){}
+    await new Promise(r=>setTimeout(r,300));
+    fontsReady=true;
+  }catch(e){fontsReady=true}
+}
+
+function loadLibrary(){try{const d=localStorage.getItem(STORAGE_KEY);state.library=d?JSON.parse(d):[]}catch(e){state.library=[]}}
+function saveLibrary(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(state.library))}catch(e){}}
+function toast(msg,ms){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove('show'),ms||2200)}
+function setStatus(t,c){const el=document.getElementById('status');el.textContent=t;el.className='status'+(c?' '+c:'')}
+function showProgress(s,p){const w=document.getElementById('progressWrap');const b=document.getElementById('progressBar');w.classList.toggle('hidden',!s);if(p!==undefined)b.style.width=p+'%'}
+
+function loadApiKey(){
+  try{
+    const k=localStorage.getItem(API_KEY_STORAGE);if(k)document.getElementById('apiKey').value=k;
+    const a=localStorage.getItem(AUTHOR_STORAGE);if(a){document.getElementById('authorName').value=a;state.authorName=a}
+    const s=localStorage.getItem(STYLE_STORAGE);
+    if(s&&STYLE_NAMES[s]){state.imageStyle=s;document.getElementById('styleBtn').textContent='🎨 '+STYLE_NAMES[s].split(' ').slice(1).join(' ')}
+    const d=parseInt(localStorage.getItem(DURATION_STORAGE)||'0',10);
+    if(DURATION_OPTIONS.includes(d))state.videoDuration=d;
+    const an=localStorage.getItem(ANIMATION_STORAGE);
+    if(an&&ANIMATION_OPTIONS.includes(an))state.animationType=an;
+    const or=localStorage.getItem(ORIENTATION_STORAGE);
+    if(or==='portrait'||or==='landscape')state.orientation=or;
+    updateDurationButton();updateAnimationButton();updateOrientationUI();
+  }catch(e){}
+}
+function saveApiKey(k){try{localStorage.setItem(API_KEY_STORAGE,k)}catch(e){}}
+function saveAuthor(a){try{localStorage.setItem(AUTHOR_STORAGE,a)}catch(e){}}
+function saveStyle(s){try{localStorage.setItem(STYLE_STORAGE,s)}catch(e){}}
+function saveDuration(d){try{localStorage.setItem(DURATION_STORAGE,String(d))}catch(e){}}
+function saveAnimation(a){try{localStorage.setItem(ANIMATION_STORAGE,a)}catch(e){}}
+function saveOrientation(o){try{localStorage.setItem(ORIENTATION_STORAGE,o)}catch(e){}}
+
+function updateDurationButton(){const btn=document.getElementById('durationBtn');if(btn)btn.textContent='⏱️ '+state.videoDuration+' ث'}
+function updateAnimationButton(){const btn=document.getElementById('animationBtn');if(btn)btn.textContent=ANIMATION_LABELS[state.animationType]||'✍️ كلمة'}
+function updateOrientationUI(){
+  const p=document.getElementById('orientPortrait');
+  const l=document.getElementById('orientLandscape');
+  if(!p||!l)return;
+  p.classList.toggle('on',state.orientation==='portrait');
+  l.classList.toggle('on',state.orientation==='landscape');
+}
+
+async function extractPdfText(file){
+  if(!pdfjsReady)throw new Error('pdf.js لم يُحمّل');
+  const arrayBuffer=await file.arrayBuffer();
+  const pdf=await pdfjsLib.getDocument({data:arrayBuffer}).promise;
+  const totalPages=pdf.numPages;
+  const MAX=30;
+  let start=1;
+  if(totalPages>MAX)start=Math.floor(Math.random()*(totalPages-MAX))+1;
+  const end=Math.min(start+MAX-1,totalPages);
+  let text='';
+  for(let i=start;i<=end;i++){
+    const page=await pdf.getPage(i);
+    const content=await page.getTextContent();
+    const pageText=content.items.map(item=>item.str).join(' ');
+    text+=`[صفحة ${i}]\n${pageText.trim()}\n\n`;
+    showProgress(true,Math.round(((i-start+1)/(end-start+1))*100));
+  }
+  showProgress(false);
+  return {text,totalPages};
+}
+
+function cleanPdfText(text){
+  text=text.replace(/[\u4e00-\u9fff\u3040-\u309f\u30a0-\u30ff\uac00-\ud7af]+/g,'');
+  text=text.replace(/[\x00-\x08\x0b\x0c\x0e-\x1f]/g,'');
+  text=text.replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu,'');
+  text=text.replace(/[ \t]+/g,' ').replace(/\n{3,}/g,'\n\n');
+  return text.trim();
+}
+
+function cleanOutputText(text){
+  text=text.replace(/<unk>/g,'').replace(/\[UNK\]/g,'');
+  if(text.includes('```'))text=text.replace(/```[a-zA-Z]*\n/g,'').replace(/```/g,'');
+  text=text.replace(/[\u4e00-\u9fff\u3040-\u309f\u30a0-\u30ff\uac00-\ud7af]+/g,'');
+  text=text.replace(/[\x00-\x08\x0b\x0c\x0e-\x1f]/g,'');
+  const lines=text.split('\n');
+  const out=[];
+  for(const line of lines){
+    const s=line.trim();
+    if(!s){out.push('');continue}
+    if(/[\u0600-\u06FF]/.test(s)||/^\[?صفحة|^\d+\s*[\-\.\]\)]|^\d+$/.test(s))out.push(line);
+  }
+  return out.join('\n').replace(/\n{3,}/g,'\n\n').trim();
+}
+
+function parseQuotes(text){
+  text=text.trim();
+  if(!text)return [];
+  const parts=('\n'+text).split(/\n(?=\s*\d+\s*[\.\-–—\)])/);
+  const quotes=[];
+  for(let p of parts){
+    p=p.trim();if(!p)continue;
+    p=p.replace(/^\s*\d+\s*[\.\-–—\)]\s*/,'');
+    if(p&&p.length>20)quotes.push(p);
+  }
+  if(quotes.length<=1&&text.length>400){
+    const chunks=text.split(/\n\n+/).map(c=>c.trim()).filter(c=>c);
+    if(chunks.length>1)return chunks;
+  }
+  return quotes.length?quotes:[text];
+}
+
+function truncateAtLine(text,maxChars){
+  if(text.length<=maxChars)return text;
+  const cut=text.lastIndexOf('\n',maxChars);
+  return text.substring(0,cut>0?cut:maxChars);
+}
+
+function prepareQuoteText(text){
+  let t=String(text||'');
+  t=t.replace(/\s*\[صفحة\s*\d+\]\s*/g,' ');
+  t=t.replace(/\[\s*\]/g,' ');
+  t=t.replace(/[\s،؛:\.\!\?؟\u060C\u061B\u061F\u066A-\u066D]+$/g,'');
+  t=t.replace(/\s+/g,' ').trim();
+  if(t.length)t=t+'.';
+  return t;
+}
+
+const MODELS=['openai/gpt-oss-120b','google/gemini-2.5-flash','meta-llama/llama-3.3-70b-instruct'];
+
+async function callOpenRouter(apiKey,bookName,bookText,count){
+  const seed=Math.floor(Math.random()*9000)+1000;
+  const prompt=`أنت مساعد متخصص في استخراج الاقتباسات الفكرية من الكتب العربية.
+
+تعليمات مهمة جداً:
+- النص المرفق قد يحتوي على رموز غريبة أو أحرف صينية أو unk — تجاهلها.
+- اكتب بالعربية الفصحى فقط.
+
+اسم الكتاب: ${bookName||'غير مذكور'}
+رمز التنويع: ${seed}
+
+⚠️ الأهم في هذه المهمة: أن يكون كل اقتباس **فقرة كاملة** تنقل فكرة متكاملة للقارئ.
+
+الشروط:
+1. كل اقتباس يجب أن يتكون من **3 إلى 5 جمل مترابطة** (40-90 كلمة).
+2. الاقتباس يجب أن ينقل **فكرة كاملة** يفهمها القارئ بدون الرجوع للكتاب.
+3. اختر مقاطع تبدأ بجملة تمهيدية وتنتهي بخاتمة أو نتيجة.
+4. ركّز على الأفكار القوية: النفسية، الفلسفية، الاجتماعية، التطويرية.
+5. عربي فقط، طابق النص حرفياً بدون اختلاق.
+
+المطلوب: استخرج ${count} اقتباسات فكرية طويلة من النص المرفق.
+
+تعليمات الإخراج:
+- ابدأ القائمة مباشرة.
+- رقّم من 1 إلى ${count}.
+- ضع سطراً فارغاً بين كل اقتباسين.
+- لا تكتب أي شيء آخر غير الاقتباسات.
+
+نص الكتاب:
+${bookText}`;
+  const errors=[];
+  for(const model of MODELS){
+    setStatus(`(${model.split('/').pop()}) جاري الاتصال...`);
+    try{
+      const res=await fetch('https://openrouter.ai/api/v1/chat/completions',{
+        method:'POST',
+        headers:{'Authorization':'Bearer '+apiKey,'Content-Type':'application/json','HTTP-Referer':location.origin,'X-Title':'Arabic Quotes Extractor'},
+        body:JSON.stringify({model,messages:[{role:'user',content:prompt}],temperature:0.85,max_tokens:4000})
+      });
+      if(res.status===200){
+        const data=await res.json();
+        let answer=cleanOutputText(data.choices?.[0]?.message?.content||'');
+        if((answer.match(/[\u0600-\u06FF]/g)||[]).length<100){errors.push(`${model}: غير عربية`);continue}
+        return {text:answer,model};
+      }
+      const errData=await res.json().catch(()=>({}));
+      errors.push(`${model}: ${(errData.error?.message||'HTTP '+res.status).substring(0,100)}`);
+      if([429,500,502,503].includes(res.status))await new Promise(r=>setTimeout(r,3000));
+    }catch(e){errors.push(`${model}: ${e.message}`)}
+  }
+  throw new Error('فشلت المحاولات:\n'+errors.join('\n'));
+}
+
+function escapeXml(s){return String(s).replace(/[<>&'"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;',"'":'&apos;','"':'&quot;'}[c]))}
+
+let _measureSvg=null,_measureText=null;
+function measureSvgTextWidth(text,fontSize,fontWeight,fontFamily){
+  const svgNS='http://www.w3.org/2000/svg';
+  if(!_measureSvg){
+    _measureSvg=document.createElementNS(svgNS,'svg');
+    _measureSvg.setAttribute('xmlns',svgNS);
+    _measureSvg.style.cssText='position:absolute;width:0;height:0;visibility:hidden;top:-9999px;';
+    _measureText=document.createElementNS(svgNS,'text');
+    _measureSvg.appendChild(_measureText);
+    document.body.appendChild(_measureSvg);
+  }
+  _measureText.setAttribute('font-family',fontFamily||FONT_FAMILY);
+  _measureText.setAttribute('font-size',String(fontSize));
+  _measureText.setAttribute('font-weight',String(fontWeight||700));
+  _measureText.setAttribute('direction','rtl');
+  _measureText.setAttribute('text-anchor','middle');
+  _measureText.setAttribute('x','500');
+  _measureText.setAttribute('y','100');
+  _measureText.textContent=text;
+  let w=0;
+  try{w=_measureText.getComputedTextLength()}catch(e){try{w=_measureText.getBBox().width}catch(e2){w=text.length*fontSize*0.5}}
+  return w;
+}
+
+function wrapArabicText(text,maxWidth,fontSize,fontFamily){
+  const lines=[];
+  const paragraphs=text.split('\n');
+  for(const para of paragraphs){
+    if(!para.trim()){lines.push('');continue}
+    const words=para.split(/\s+/);
+    let current='';
+    for(const word of words){
+      const test=current?current+' '+word:word;
+      const w=measureSvgTextWidth(test,fontSize,700,fontFamily);
+      if(w>maxWidth&&current){lines.push(current);current=word}
+      else current=test;
+    }
+    if(current)lines.push(current);
+  }
+  return lines;
+}
+
+function computeOptimalLayout(text,W,H,config,variant){
+  const isPortrait=H>W;
+  const len=text.length;
+  let topDivider,bottomDivider,ABSOLUTE_MAX_WIDTH;
+  if(isPortrait){
+    topDivider=config.isModern||config.isNews?200:340;
+    bottomDivider=config.isModern||config.isNews?H-320:H-400;
+    ABSOLUTE_MAX_WIDTH=W-400;
+  }else{
+    topDivider=config.isModern||config.isNews?100:150;
+    bottomDivider=config.isModern||config.isNews?H-140:H-180;
+    ABSOLUTE_MAX_WIDTH=Math.min(W-400,1500);
+  }
+  const availableHeight=bottomDivider-topDivider-(isPortrait?80:40);
+  let fontSize;
+  if(isPortrait){
+    if(len<120)fontSize=84;else if(len<180)fontSize=76;else if(len<260)fontSize=68;
+    else if(len<360)fontSize=60;else if(len<480)fontSize=52;else fontSize=46;
+  }else{
+    if(len<120)fontSize=72;else if(len<180)fontSize=64;else if(len<260)fontSize=58;
+    else if(len<360)fontSize=52;else if(len<480)fontSize=46;else fontSize=42;
+  }
+  const lhRatio=isPortrait?1.85:1.75;
+  let maxTextWidth=ABSOLUTE_MAX_WIDTH;
+  let lineHeight=Math.round(fontSize*lhRatio);
+  let lines=wrapArabicText(text,maxTextWidth,fontSize,variant.font);
+  function hasAnyOverflow(lns,fs){
+    for(const ln of lns){if(measureSvgTextWidth(ln,fs,700,variant.font)>ABSOLUTE_MAX_WIDTH+30)return true}
+    return false;
+  }
+  let safety=0;
+  while(safety<60){
+    const tooTall=(lines.length*lineHeight)>availableHeight;
+    const tooWide=hasAnyOverflow(lines,fontSize);
+    if(!tooTall&&!tooWide)break;
+    fontSize-=2;
+    lineHeight=Math.round(fontSize*lhRatio);
+    lines=wrapArabicText(text,maxTextWidth,fontSize,variant.font);
+    safety++;
+    if(fontSize<=24)break;
+  }
+  safety=0;
+  const minLinesForGrow=isPortrait?4:3;
+  const maxFontSize=isPortrait?115:90;
+  while(lines.length<minLinesForGrow&&fontSize<maxFontSize&&safety<20){
+    const nextFs=fontSize+3;
+    const testLines=wrapArabicText(text,maxTextWidth,nextFs,variant.font);
+    if(hasAnyOverflow(testLines,nextFs))break;
+    if(testLines.length*Math.round(nextFs*lhRatio)>availableHeight)break;
+    fontSize=nextFs;
+    lineHeight=Math.round(fontSize*lhRatio);
+    lines=testLines;
+    safety++;
+  }
+  return {fontSize,maxTextWidth,lines,lineHeight,topDivider,bottomDivider,availableHeight};
+}
+
+function buildCornerSVG(cx,cy,dirX,dirY,size,color){
+  const L=size;
+  let g=`<g stroke="${color}" fill="${color}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">`;
+  g+=`<line x1="${cx}" y1="${cy}" x2="${cx+L*dirX}" y2="${cy}"/>`;
+  g+=`<line x1="${cx}" y1="${cy}" x2="${cx}" y2="${cy+L*dirY}"/>`;
+  g+=`<circle cx="${cx+L*dirX}" cy="${cy}" r="3"/>`;
+  g+=`<circle cx="${cx}" cy="${cy+L*dirY}" r="3"/>`;
+  g+=`<path d="M ${cx+40*dirX} ${cy} C ${cx+70*dirX} ${cy+25*dirY}, ${cx+100*dirX} ${cy+10*dirY}, ${cx+85*dirX} ${cy+35*dirY}" fill="none"/>`;
+  g+=`<path d="M ${cx+55*dirX} ${cy+5*dirY} Q ${cx+75*dirX} ${cy-15*dirY} ${cx+90*dirX} ${cy+5*dirY} Q ${cx+75*dirX} ${cy+15*dirY} ${cx+55*dirX} ${cy+5*dirY} Z" stroke="none"/>`;
+  g+=`<path d="M ${cx} ${cy+40*dirY} C ${cx+25*dirX} ${cy+70*dirY}, ${cx+10*dirX} ${cy+100*dirY}, ${cx+35*dirX} ${cy+85*dirY}" fill="none"/>`;
+  g+=`<path d="M ${cx+5*dirX} ${cy+55*dirY} Q ${cx-15*dirX} ${cy+75*dirY} ${cx+5*dirX} ${cy+90*dirY} Q ${cx+15*dirX} ${cy+75*dirY} ${cx+5*dirX} ${cy+55*dirY} Z" stroke="none"/>`;
+  g+='</g>';
+  return g;
+}
+
+function buildDividerSVG(cx,y,width,color){
+  if(!width)return '';
+  const half=width/2;
+  let g=`<g stroke="${color}" fill="${color}" stroke-width="1.5">`;
+  g+=`<line x1="${cx-half}" y1="${y}" x2="${cx-15}" y2="${y}"/>`;
+  g+=`<line x1="${cx+15}" y1="${y}" x2="${cx+half}" y2="${y}"/>`;
+  g+=`<polygon points="${cx},${y-6} ${cx+6},${y} ${cx},${y+6} ${cx-6},${y}" stroke="none"/>`;
+  g+=`<polygon points="${cx-half-6},${y-3} ${cx-half},${y} ${cx-half-6},${y+3} ${cx-half-12},${y}" stroke="none"/>`;
+  g+=`<polygon points="${cx+half+6},${y-3} ${cx+half},${y} ${cx+half+6},${y+3} ${cx+half+12},${y}" stroke="none"/>`;
+  g+='</g>';
+  return g;
+}
+
+function buildKhatimPatternSVG(W,H,color,opacity){
+  const spacing=110;
+  let s=`<g stroke="${color}" fill="none" stroke-width="1.5" opacity="${opacity}">`;
+  for(let y=-spacing;y<H+spacing;y+=spacing){
+    for(let x=-spacing;x<W+spacing;x+=spacing){
+      s+=`<rect x="${x-32}" y="${y-32}" width="64" height="64"/>`;
+      s+=`<rect x="${x-32}" y="${y-32}" width="64" height="64" transform="rotate(45 ${x} ${y})"/>`;
+      const ox=x+spacing/2,oy=y+spacing/2;
+      s+=`<rect x="${ox-32}" y="${oy-32}" width="64" height="64"/>`;
+      s+=`<rect x="${ox-32}" y="${oy-32}" width="64" height="64" transform="rotate(45 ${ox} ${oy})"/>`;
+    }
+  }
+  return s+'</g>';
+}
+
+function buildStarsLayerSVG(W,H,count){
+  let s='<g>';
+  for(let i=0;i<count;i++){
+    const x=Math.random()*W;
+    const y=Math.random()*H*0.9;
+    const r=Math.random()*2+0.8;
+    const opacity=Math.random()*0.6+0.3;
+    s+=`<circle cx="${x.toFixed(0)}" cy="${y.toFixed(0)}" r="${r.toFixed(1)}" fill="#ffffff" opacity="${opacity.toFixed(2)}"/>`;
+  }
+  return s+'</g>';
+}
+
+function buildDiamondPatternSVG(W,H,color,opacity){
+  const spacing=130;
+  let s=`<g stroke="${color}" fill="none" stroke-width="0.8" opacity="${opacity}">`;
+  for(let y=0;y<H+spacing;y+=spacing){
+    for(let x=0;x<W+spacing;x+=spacing){
+      s+=`<polygon points="${x},${y-22} ${x+22},${y} ${x},${y+22} ${x-22},${y}"/>`;
+      const ox=x+spacing/2,oy=y+spacing/2;
+      s+=`<polygon points="${ox},${oy-15} ${ox+15},${oy} ${ox},${oy+15} ${ox-15},${oy}"/>`;
+    }
+  }
+  return s+'</g>';
+}
+
+function buildNewsBracketsSVG(W,H,color,thickness){
+  const pad=130,armLen=300;
+  let s=`<g stroke="${color}" fill="none" stroke-width="${thickness}" stroke-linecap="square">`;
+  s+=`<line x1="${pad}" y1="${pad}" x2="${pad+armLen}" y2="${pad}"/>`;
+  s+=`<line x1="${pad}" y1="${pad}" x2="${pad}" y2="${pad+armLen}"/>`;
+  s+=`<line x1="${W-pad}" y1="${H-pad}" x2="${W-pad-armLen}" y2="${H-pad}"/>`;
+  s+=`<line x1="${W-pad}" y1="${H-pad}" x2="${W-pad}" y2="${H-pad-armLen}"/>`;
+  return s+'</g>';
+}
+
+function buildQuoteSVG(opts){
+  const {W,H,lines,fontSize,lineHeight,startY,topDivider,bottomDivider,bookName,authorName,config,variant,showQuote,showBook,showAuthor,textOpacity}=opts;
+  const isPortrait=H>W;
+  const op=(typeof textOpacity==='number')?textOpacity:1;
+  const NS='xmlns="http://www.w3.org/2000/svg"';
+  const font=variant.font;
+  const cx=W/2;
+  let s=`<svg ${NS} width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">`;
+  s+=`<defs>
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="1" y2="1">
+      ${config.bgColors.map((c,i)=>`<stop offset="${(i/(config.bgColors.length-1)*100).toFixed(1)}%" stop-color="${c}"/>`).join('')}
+    </linearGradient>
+    <radialGradient id="vgGrad" cx="50%" cy="50%" r="60%">
+      <stop offset="0%" stop-color="${config.vignette[0]}"/>
+      <stop offset="100%" stop-color="${config.vignette[1]}"/>
+    </radialGradient>
+  </defs>`;
+  s+=`<rect width="${W}" height="${H}" fill="url(#bgGrad)"/>`;
+  s+=`<rect width="${W}" height="${H}" fill="url(#vgGrad)"/>`;
+  s+=bgLayerSVG(W,H,config.lightBg?'#ffffff':'#000');
+  if(config.khatimPattern)s+=buildKhatimPatternSVG(W,H,config.khatimColor,0.07);
+  if(config.starsLayer)s+=buildStarsLayerSVG(W,H,config.starsCount||100);
+  if(config.diamondPattern)s+=buildDiamondPatternSVG(W,H,config.diamondColor,0.06);
+  if(config.stars&&!config.starsLayer){
+    s+=`<g fill="${config.starsColor}" opacity="0.18">`;
+    for(let i=0;i<300;i++){
+      s+=`<rect x="${(Math.random()*W).toFixed(0)}" y="${(Math.random()*H).toFixed(0)}" width="1" height="1"/>`;
+    }
+    s+='</g>';
+  }
+  for(const f of config.frames){
+    s+=`<rect x="${f.inset}" y="${f.inset}" width="${W-f.inset*2}" height="${H-f.inset*2}" fill="none" stroke="${f.color}" stroke-width="${f.width}"/>`;
+  }
+  if(config.cornerColor){
+    const c=config.cornerInset||66;
+    s+=buildCornerSVG(c,c,1,1,config.cornerSize,config.cornerColor);
+    s+=buildCornerSVG(W-c,c,-1,1,config.cornerSize,config.cornerColor);
+    s+=buildCornerSVG(c,H-c,1,-1,config.cornerSize,config.cornerColor);
+    s+=buildCornerSVG(W-c,H-c,-1,-1,config.cornerSize,config.cornerColor);
+  }
+  if(config.newsBrackets)s+=buildNewsBracketsSVG(W,H,config.bracketColor||'#1a1a1a',config.bracketThickness||28);
+  const openG=op<1?`<g opacity="${op.toFixed(3)}">`:'';
+  const closeG=op<1?'</g>':'';
+  s+=openG;
+  const qmY=isPortrait?230:140;
+  const qmSize=isPortrait?220:150;
+  if(showQuote)s+=`<text x="90" y="${qmY}" font-family="Aref Ruqaa, Georgia, serif" font-weight="bold" font-size="${qmSize}" fill="${config.quoteMarkColor}" text-anchor="start">&#8220;</text>`;
+  s+=buildDividerSVG(cx,topDivider,config.topDividerWidth||300,config.ornamentColor);
+  for(let i=0;i<lines.length;i++){
+    const line=lines[i];
+    if(!line)continue;
+    const baselineY=startY+i*lineHeight+fontSize*0.85;
+    const common=`font-family="${font}" font-weight="700" font-size="${fontSize}" text-anchor="middle" direction="rtl"`;
+    s+=`<text x="${cx+2}" y="${baselineY+3}" ${common} fill="${variant.textShadow}">${escapeXml(line)}</text>`;
+    s+=`<text x="${cx-1}" y="${baselineY-1}" ${common} fill="${variant.textHighlight}">${escapeXml(line)}</text>`;
+    s+=`<text x="${cx}" y="${baselineY}" ${common} fill="${variant.textColor}">${escapeXml(line)}</text>`;
+  }
+  s+=buildDividerSVG(cx,bottomDivider,config.bottomDividerWidth||240,config.ornamentColor);
+  const bookY=isPortrait?H-200:H-120;
+  const authorY=isPortrait?H-150:H-70;
+  if(showBook&&bookName){
+    const bookText='\u{1F4D6} \uFD3F '+bookName+' \uFD3E';
+    s+=`<text x="${cx}" y="${bookY}" font-family="${FONT_FAMILY}" font-weight="700" font-size="36" fill="${config.bookColor}" text-anchor="middle" direction="rtl">${escapeXml(bookText)}</text>`;
+  }
+  if(showAuthor&&authorName){
+    const authorText='\u270D '+authorName;
+    s+=`<text x="${cx}" y="${authorY}" font-family="${FONT_FAMILY}" font-weight="400" font-style="italic" font-size="28" fill="${config.authorColor}" text-anchor="middle" direction="rtl">${escapeXml(authorText)}</text>`;
+  }
+  const wmPositions=[
+    {x:W*0.25,y:H*0.16},{x:W*0.75,y:H*0.34},
+    {x:W*0.28,y:H*0.56},{x:W*0.72,y:H*0.76}
+  ];
+  for(const p of wmPositions){
+    s+=`<text transform="translate(${p.x.toFixed(0)} ${p.y.toFixed(0)}) rotate(-22)" font-family="${FONT_FAMILY}" font-weight="700" font-size="34" fill="${config.watermarkColor}" opacity="0.12" text-anchor="middle" direction="rtl">تصميم / sab3-77</text>`;
+  }
+  s+=closeG;
+  return s+'</svg>';
+}
+
+const STYLE_CONFIGS={
+  naskh:{
+    bgColors:['#0a1a30','#0f2542','#071224'],
+    vignette:['rgba(70,110,170,0.22)','rgba(0,0,0,0.55)'],
+    frames:[{color:'#c9a961',width:5,inset:38},{color:'#8a6d2f',width:1.5,inset:58},{color:'rgba(201,169,97,0.5)',width:1,inset:66}],
+    cornerColor:'#c9a961',cornerSize:140,cornerInset:66,
+    stars:true,starsColor:'#c9a961',
+    ornamentColor:'#c9a961',quoteMarkColor:'#f5e6b8',
+    bookColor:'#f5e6b8',authorColor:'#c9a961',watermarkColor:'#e8d5a8',
+    topDividerWidth:320,bottomDividerWidth:260,
+    variants:[
+      {font:FONT_FAMILY,textColor:'#e8d5a8',textShadow:'rgba(0,0,0,0.85)',textHighlight:'rgba(255,245,200,0.85)'},
+      {font:FONT_FAMILY_B,textColor:'#f5e6b8',textShadow:'rgba(0,0,0,0.9)',textHighlight:'rgba(255,250,220,0.9)'},
+      {font:FONT_FAMILY_C,textColor:'#d4b478',textShadow:'rgba(0,0,0,0.85)',textHighlight:'rgba(255,240,200,0.8)'},
+      {font:FONT_FAMILY,textColor:'#f0e6d2',textShadow:'rgba(0,0,0,0.9)',textHighlight:'rgba(255,255,240,0.85)'}
+    ]
+  },
+  oriental:{
+    bgColors:['#14213d','#1a2b4a','#0d1b2f'],
+    vignette:['rgba(60,90,150,0.15)','rgba(0,0,0,0.4)'],
+    frames:[{color:'rgba(201,169,97,0.9)',width:3,inset:50},{color:'rgba(201,169,97,0.35)',width:1,inset:70}],
+    cornerColor:'rgba(201,169,97,0.85)',cornerSize:130,cornerInset:70,
+    khatimPattern:true,khatimColor:'#c9a961',
+    ornamentColor:'#c9a961',quoteMarkColor:'rgba(201,169,97,0.9)',
+    bookColor:'#e8d5a8',authorColor:'#c9a961',watermarkColor:'#c9a961',
+    topDividerWidth:320,bottomDividerWidth:240,
+    variants:[
+      {font:FONT_FAMILY,textColor:'#f5ecd9',textShadow:'rgba(0,0,0,0.55)',textHighlight:'rgba(255,255,255,0.35)'},
+      {font:FONT_FAMILY_B,textColor:'#e8d5a8',textShadow:'rgba(0,0,0,0.7)',textHighlight:'rgba(255,240,200,0.55)'},
+      {font:FONT_FAMILY_C,textColor:'#f0e6d2',textShadow:'rgba(0,0,0,0.55)',textHighlight:'rgba(255,255,255,0.35)'}
+    ]
+  },
+  classic:{lightBg:true,
+    bgColors:['#f7efdd','#f2e6cd','#e9d8b5'],
+    vignette:['rgba(255,248,232,0.45)','rgba(120,90,50,0.18)'],
+    frames:[{color:'#b8945a',width:4,inset:40},{color:'rgba(184,148,90,0.55)',width:1,inset:60}],
+    cornerColor:'#b8945a',cornerSize:120,cornerInset:60,
+    ornamentColor:'#b8945a',quoteMarkColor:'rgba(30,58,95,0.85)',
+    bookColor:'#5c4a2f',authorColor:'#8a7a5f',watermarkColor:'#5a3a10',
+    topDividerWidth:300,bottomDividerWidth:240,
+    variants:[
+      {font:FONT_FAMILY,textColor:'#2a1f14',textShadow:'rgba(0,0,0,0.28)',textHighlight:'rgba(255,240,200,0.75)'},
+      {font:FONT_FAMILY_B,textColor:'#1a2a45',textShadow:'rgba(0,0,0,0.3)',textHighlight:'rgba(200,220,255,0.6)'},
+      {font:FONT_FAMILY_C,textColor:'#1e3a2a',textShadow:'rgba(0,0,0,0.28)',textHighlight:'rgba(220,255,220,0.6)'}
+    ]
+  },
+  modern:{lightBg:true,
+    bgColors:['#fefefe','#ffffff','#ffffff'],
+    vignette:['rgba(255,255,255,0)','rgba(255,255,255,0)'],
+    frames:[],cornerColor:null,
+    ornamentColor:'#0f172a',quoteMarkColor:'#0f172a',
+    bookColor:'#0f172a',authorColor:'#64748b',watermarkColor:'#0f172a',
+    topDividerWidth:0,bottomDividerWidth:0,isModern:true,
+    variants:[
+      {font:'-apple-system, "SF Arabic", '+FONT_FAMILY,textColor:'#0f172a',textShadow:'rgba(0,0,0,0.05)',textHighlight:'rgba(255,255,255,0.4)'},
+      {font:'-apple-system, "SF Arabic", '+FONT_FAMILY,textColor:'#1e3a8a',textShadow:'rgba(0,0,0,0.05)',textHighlight:'rgba(255,255,255,0.4)'},
+      {font:FONT_FAMILY,textColor:'#4c1d95',textShadow:'rgba(0,0,0,0.05)',textHighlight:'rgba(255,255,255,0.4)'},
+      {font:FONT_FAMILY_B,textColor:'#064e3b',textShadow:'rgba(0,0,0,0.05)',textHighlight:'rgba(255,255,255,0.4)'}
+    ]
+  },
+  islamic:{
+    bgColors:['#0a3d2e','#0e5940','#082818'],
+    vignette:['rgba(212,175,55,0.18)','rgba(0,0,0,0.55)'],
+    frames:[{color:'#d4af37',width:5,inset:40},{color:'#8a6d2f',width:1.5,inset:60},{color:'rgba(212,175,55,0.4)',width:1,inset:70}],
+    cornerColor:'#d4af37',cornerSize:140,cornerInset:70,
+    khatimPattern:true,khatimColor:'#d4af37',
+    ornamentColor:'#d4af37',quoteMarkColor:'#e8d5a8',
+    bookColor:'#e8d5a8',authorColor:'#d4af37',watermarkColor:'#d4af37',
+    topDividerWidth:320,bottomDividerWidth:260,
+    variants:[
+      {font:FONT_FAMILY,textColor:'#f5ecd9',textShadow:'rgba(0,0,0,0.75)',textHighlight:'rgba(255,245,200,0.55)'},
+      {font:FONT_FAMILY_C,textColor:'#e8d5a8',textShadow:'rgba(0,0,0,0.75)',textHighlight:'rgba(255,240,200,0.55)'},
+      {font:FONT_FAMILY_B,textColor:'#f0e6d2',textShadow:'rgba(0,0,0,0.8)',textHighlight:'rgba(255,245,200,0.6)'}
+    ]
+  },
+  night:{
+    bgColors:['#000308','#0a1224','#000205'],
+    vignette:['rgba(70,100,180,0.18)','rgba(0,0,0,0.75)'],
+    frames:[{color:'rgba(200,215,240,0.4)',width:2,inset:50},{color:'rgba(200,215,240,0.15)',width:1,inset:65}],
+    cornerColor:'rgba(200,215,240,0.55)',cornerSize:110,cornerInset:65,
+    starsLayer:true,starsCount:140,
+    ornamentColor:'rgba(200,215,240,0.6)',quoteMarkColor:'rgba(220,230,250,0.75)',
+    bookColor:'#c8d2e6',authorColor:'#8899b8',watermarkColor:'#c8d2e6',
+    topDividerWidth:280,bottomDividerWidth:220,
+    variants:[
+      {font:FONT_FAMILY,textColor:'#e8eef8',textShadow:'rgba(0,0,0,0.95)',textHighlight:'rgba(180,200,240,0.35)'},
+      {font:FONT_FAMILY_C,textColor:'#d8e0f0',textShadow:'rgba(0,0,0,0.95)',textHighlight:'rgba(180,200,240,0.35)'},
+      {font:FONT_FAMILY_B,textColor:'#f0f4fc',textShadow:'rgba(0,0,0,0.95)',textHighlight:'rgba(200,215,250,0.4)'}
+    ]
+  },
+  news:{lightBg:true,
+    bgColors:['#ffffff','#fcfcfc','#f5f5f5'],
+    vignette:['rgba(255,255,255,0)','rgba(180,180,180,0.12)'],
+    frames:[],cornerColor:null,
+    newsBrackets:true,bracketColor:'#1a1a1a',bracketThickness:28,
+    ornamentColor:'#1a1a1a',quoteMarkColor:'#1a1a1a',
+    bookColor:'#1a1a1a',authorColor:'#666666',watermarkColor:'#999999',
+    topDividerWidth:240,bottomDividerWidth:200,isNews:true,
+    variants:[
+      {font:'-apple-system, "SF Arabic", '+FONT_FAMILY,textColor:'#0a0a0a',textShadow:'rgba(0,0,0,0.05)',textHighlight:'rgba(255,255,255,0.5)'},
+      {font:FONT_FAMILY,textColor:'#0a0a0a',textShadow:'rgba(0,0,0,0.05)',textHighlight:'rgba(255,255,255,0.5)'},
+      {font:FONT_FAMILY_B,textColor:'#1a1a1a',textShadow:'rgba(0,0,0,0.05)',textHighlight:'rgba(255,255,255,0.5)'}
+    ]
+  },
+  emerald:{
+    bgColors:['#0a3d2e','#0f4a37','#082818'],
+    vignette:['rgba(150,220,180,0.12)','rgba(0,0,0,0.5)'],
+    frames:[{color:'#a8c7b0',width:4,inset:45},{color:'rgba(168,199,176,0.4)',width:1,inset:65}],
+    cornerColor:'#a8c7b0',cornerSize:120,cornerInset:65,
+    diamondPattern:true,diamondColor:'#a8c7b0',
+    ornamentColor:'#a8c7b0',quoteMarkColor:'#d4e8d8',
+    bookColor:'#d4e8d8',authorColor:'#a8c7b0',watermarkColor:'#a8c7b0',
+    topDividerWidth:300,bottomDividerWidth:240,
+    variants:[
+      {font:FONT_FAMILY,textColor:'#f0f8f2',textShadow:'rgba(0,0,0,0.7)',textHighlight:'rgba(220,255,235,0.4)'},
+      {font:FONT_FAMILY_C,textColor:'#e0f0e4',textShadow:'rgba(0,0,0,0.7)',textHighlight:'rgba(220,255,235,0.4)'},
+      {font:FONT_FAMILY_B,textColor:'#f5fcf7',textShadow:'rgba(0,0,0,0.75)',textHighlight:'rgba(230,255,240,0.45)'}
+    ]
+  },
+  sunset:{
+    bgColors:['#ff6b35','#d94a6b','#7a1e5e'],
+    vignette:['rgba(255,220,150,0.18)','rgba(60,0,30,0.45)'],
+    frames:[{color:'rgba(255,240,200,0.85)',width:4,inset:45},{color:'rgba(255,240,200,0.35)',width:1,inset:65}],
+    cornerColor:'rgba(255,240,200,0.9)',cornerSize:125,cornerInset:65,
+    stars:true,starsColor:'#fff5e0',
+    ornamentColor:'#fff5e0',quoteMarkColor:'#fff8e7',
+    bookColor:'#fff8e7',authorColor:'rgba(255,240,200,0.9)',watermarkColor:'#fff',
+    topDividerWidth:300,bottomDividerWidth:240,
+    variants:[
+      {font:FONT_FAMILY,textColor:'#fff8e7',textShadow:'rgba(80,0,30,0.55)',textHighlight:'rgba(255,255,220,0.5)'},
+      {font:FONT_FAMILY_B,textColor:'#fff',textShadow:'rgba(80,0,30,0.65)',textHighlight:'rgba(255,255,220,0.55)'},
+      {font:FONT_FAMILY_C,textColor:'#fff5e0',textShadow:'rgba(80,0,30,0.55)',textHighlight:'rgba(255,255,220,0.5)'}
+    ]
+  },
+  ocean:{
+    bgColors:['#0c2340','#0e4c6b','#052636'],
+    vignette:['rgba(100,200,220,0.18)','rgba(0,20,40,0.6)'],
+    frames:[{color:'#7dd3fc',width:3,inset:45},{color:'rgba(125,211,252,0.4)',width:1,inset:65}],
+    cornerColor:'#7dd3fc',cornerSize:120,cornerInset:65,
+    diamondPattern:true,diamondColor:'#7dd3fc',
+    ornamentColor:'#7dd3fc',quoteMarkColor:'#bae6fd',
+    bookColor:'#bae6fd',authorColor:'#7dd3fc',watermarkColor:'#7dd3fc',
+    topDividerWidth:300,bottomDividerWidth:240,
+    variants:[
+      {font:FONT_FAMILY,textColor:'#e0f2fe',textShadow:'rgba(0,20,40,0.85)',textHighlight:'rgba(180,230,250,0.5)'},
+      {font:FONT_FAMILY_C,textColor:'#d0e8f8',textShadow:'rgba(0,20,40,0.85)',textHighlight:'rgba(180,230,250,0.5)'},
+      {font:FONT_FAMILY_B,textColor:'#f0f8ff',textShadow:'rgba(0,20,40,0.9)',textHighlight:'rgba(200,240,255,0.55)'}
+    ]
+  },
+  royal:{
+    bgColors:['#1e1b4b','#4c1d95','#2e1065'],
+    vignette:['rgba(180,140,240,0.18)','rgba(10,0,30,0.6)'],
+    frames:[{color:'#fbbf24',width:5,inset:38},{color:'#b45309',width:1.5,inset:58},{color:'rgba(251,191,36,0.4)',width:1,inset:66}],
+    cornerColor:'#fbbf24',cornerSize:140,cornerInset:66,
+    khatimPattern:true,khatimColor:'#fbbf24',
+    ornamentColor:'#fbbf24',quoteMarkColor:'#fef3c7',
+    bookColor:'#fef3c7',authorColor:'#fbbf24',watermarkColor:'#fbbf24',
+    topDividerWidth:320,bottomDividerWidth:260,
+    variants:[
+      {font:FONT_FAMILY,textColor:'#fef3c7',textShadow:'rgba(10,0,30,0.85)',textHighlight:'rgba(255,245,200,0.6)'},
+      {font:FONT_FAMILY_B,textColor:'#fde68a',textShadow:'rgba(10,0,30,0.9)',textHighlight:'rgba(255,245,200,0.6)'},
+      {font:FONT_FAMILY_C,textColor:'#fef9e7',textShadow:'rgba(10,0,30,0.85)',textHighlight:'rgba(255,250,220,0.6)'}
+    ]
+  },
+  sand:{
+    bgColors:['#e8d5b7','#d4b896','#c4a572'],
+    vignette:['rgba(255,240,200,0.35)','rgba(90,60,20,0.28)'],
+    frames:[{color:'#8b6f47',width:4,inset:40},{color:'rgba(139,111,71,0.5)',width:1,inset:60}],
+    cornerColor:'#8b6f47',cornerSize:120,cornerInset:60,
+    ornamentColor:'#8b6f47',quoteMarkColor:'#5c3a1a',
+    bookColor:'#3a2612',authorColor:'#6b4a25',watermarkColor:'#5a3a10',
+    topDividerWidth:300,bottomDividerWidth:240,
+    variants:[
+      {font:FONT_FAMILY,textColor:'#2a1a08',textShadow:'rgba(0,0,0,0.28)',textHighlight:'rgba(255,245,220,0.75)'},
+      {font:FONT_FAMILY_B,textColor:'#4a2a10',textShadow:'rgba(0,0,0,0.32)',textHighlight:'rgba(255,245,220,0.75)'},
+      {font:FONT_FAMILY_C,textColor:'#1a0a00',textShadow:'rgba(0,0,0,0.3)',textHighlight:'rgba(255,245,220,0.75)'}
+    ]
+  },
+  lightgold:{
+    bgColors:['#f7ecd0','#e8d4a0','#c9a961'],
+    vignette:['rgba(255,255,230,0.5)','rgba(139,105,20,0.25)'],
+    frames:[{color:'#8b6914',width:5,inset:38},{color:'#5c4a2f',width:1.5,inset:58},{color:'rgba(139,105,20,0.4)',width:1,inset:66}],
+    cornerColor:'#8b6914',cornerSize:140,cornerInset:66,
+    stars:true,starsColor:'#8b6914',
+    ornamentColor:'#8b6914',quoteMarkColor:'#3a2612',
+    bookColor:'#2a1a08',authorColor:'#4a3520',watermarkColor:'#5a3a10',
+    topDividerWidth:320,bottomDividerWidth:260,
+    variants:[
+      {font:FONT_FAMILY,textColor:'#000000',textShadow:'rgba(139,105,20,0.35)',textHighlight:'rgba(255,255,220,0.85)'},
+      {font:FONT_FAMILY_B,textColor:'#000000',textShadow:'rgba(139,105,20,0.35)',textHighlight:'rgba(255,255,220,0.85)'},
+      {font:FONT_FAMILY_C,textColor:'#000000',textShadow:'rgba(139,105,20,0.35)',textHighlight:'rgba(255,255,220,0.85)'}
+    ]
+  }
+};
+
+async function generateQuoteImage(rawText,bookName,authorName,style,forceVariantIdx,orientation){
+  await ensureFonts();
+  const text=prepareQuoteText(rawText);
+  const orient=orientation||state.orientation||'portrait';
+  const size=orient==='portrait'?SIZE_PORTRAIT:SIZE_LANDSCAPE;
+  const W=size.W,H=size.H;
+  const isPortrait=orient==='portrait';
+  const config=STYLE_CONFIGS[style]||STYLE_CONFIGS.naskh;
+  const totalVariants=config.variants.length;
+  let variantIdx;
+  if(typeof forceVariantIdx==='number')variantIdx=forceVariantIdx%totalVariants;
+  else if(typeof state.currentVariantIdx==='number'&&state.currentVariantIdx!==null)variantIdx=state.currentVariantIdx%totalVariants;
+  else variantIdx=nextVariant(totalVariants);
+  state.currentVariantIdx=variantIdx;
+  const variant=config.variants[variantIdx];
+  const layout=computeOptimalLayout(text,W,H,config,variant);
+  const fontSize=layout.fontSize;
+  const lines=layout.lines;
+  const lineHeight=layout.lineHeight;
+  const topDivider=layout.topDivider;
+  const bottomDivider=layout.bottomDivider;
+  const totalH=lines.length*lineHeight;
+  const centerY=(topDivider+bottomDivider)/2;
+  let startY=centerY-totalH/2;
+  if(startY<topDivider+30)startY=topDivider+30;
+  if(startY+totalH>bottomDivider-30)startY=bottomDivider-30-totalH;
+  const cx=W/2;
+  let svg;
+  if(config.isModern){
+    svg=`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">`;
+    svg+=`<rect width="${W}" height="${H}" fill="#fefefe"/>`;
+    svg+=bgLayerSVG(W,H,'#ffffff');
+    svg+=`<rect x="0" y="0" width="14" height="${H}" fill="#0f172a"/>`;
+    svg+=`<rect x="14" y="0" width="6" height="${H}" fill="#2b6cb0"/>`;
+    const qmY=isPortrait?260:160;
+    const qmSize=isPortrait?280:200;
+    if(state.showQuote)svg+=`<text x="50" y="${qmY}" font-family="-apple-system, system-ui, sans-serif" font-weight="bold" font-size="${qmSize}" fill="#0f172a" text-anchor="start">&#8220;</text>`;
+    for(let i=0;i<lines.length;i++){
+      const line=lines[i];if(!line)continue;
+      const y=startY+i*lineHeight+fontSize*0.85;
+      svg+=`<text x="${cx}" y="${y}" font-family="${variant.font}" font-weight="800" font-size="${fontSize}" fill="${variant.textColor}" text-anchor="middle" direction="rtl">${escapeXml(line)}</text>`;
+    }
+    const lineY=Math.min(startY+totalH+80,H-(isPortrait?300:140));
+    svg+=`<line x1="80" y1="${lineY}" x2="${W-100}" y2="${lineY}" stroke="#0f172a" stroke-width="3"/>`;
+    svg+=`<circle cx="${W-100}" cy="${lineY}" r="8" fill="#2b6cb0"/>`;
+    const bookOffY=isPortrait?60:40;
+    const authorOffY=isPortrait?110:80;
+    if(state.showBook&&bookName)svg+=`<text x="${cx}" y="${lineY+bookOffY}" font-family="-apple-system, ${FONT_FAMILY}" font-weight="700" font-size="32" fill="#0f172a" text-anchor="middle" direction="rtl">📖 ${escapeXml(bookName)}</text>`;
+    if(state.showAuthor&&authorName)svg+=`<text x="${cx}" y="${lineY+authorOffY}" font-family="-apple-system, ${FONT_FAMILY}" font-size="26" fill="#64748b" text-anchor="middle" direction="rtl">✍ ${escapeXml(authorName)}</text>`;
+    const wm=[{x:W*0.25,y:H*0.18},{x:W*0.75,y:H*0.36},{x:W*0.28,y:H*0.58},{x:W*0.72,y:H*0.78}];
+    for(const p of wm)svg+=`<text transform="translate(${p.x.toFixed(0)} ${p.y.toFixed(0)}) rotate(-22)" font-family="-apple-system, system-ui" font-weight="700" font-size="34" fill="#0f172a" opacity="0.07" text-anchor="middle">sab3-77</text>`;
+    svg+='</svg>';
+  }else{
+    svg=buildQuoteSVG({W,H,lines,fontSize,lineHeight,startY,topDivider,bottomDivider,bookName,authorName,config,variant,showQuote:state.showQuote,showBook:state.showBook,showAuthor:state.showAuthor});
+  }
+  const svgBlob=new Blob([svg],{type:'image/svg+xml;charset=utf-8'});
+  const svgUrl=URL.createObjectURL(svgBlob);
+  const img=new Image();
+  img.crossOrigin='anonymous';
+  await new Promise((resolve,reject)=>{
+    img.onload=resolve;
+    img.onerror=()=>{URL.revokeObjectURL(svgUrl);reject(new Error('فشل تحميل SVG'))};
+    img.src=svgUrl;
+  });
+  const canvas=document.createElement('canvas');
+  canvas.width=W;canvas.height=H;
+  const ctx=canvas.getContext('2d');
+  ctx.fillStyle='#ffffff';
+  ctx.fillRect(0,0,W,H);
+  ctx.drawImage(img,0,0,W,H);
+  URL.revokeObjectURL(svgUrl);
+  return new Promise(resolve=>canvas.toBlob(b=>resolve(b),'image/png'));
+}
+
+function svgToImage(svg){
+  return new Promise((resolve,reject)=>{
+    const blob=new Blob([svg],{type:'image/svg+xml;charset=utf-8'});
+    const url=URL.createObjectURL(blob);
+    const img=new Image();
+    img.crossOrigin='anonymous';
+    img.onload=()=>resolve({img,url});
+    img.onerror=()=>{URL.revokeObjectURL(url);reject(new Error('SVG load fail'))};
+    img.src=url;
+  });
+}
+
+
+function bgLayerSVG(W,H,overlayColor){
+  if(!state.bgDataUrl)return '';
+  return `<image href="${state.bgDataUrl}" x="0" y="0" width="${W}" height="${H}" preserveAspectRatio="xMidYMid slice"/>`+
+         `<rect width="${W}" height="${H}" fill="${overlayColor||'#000'}" opacity="${state.overlayOpacity}"/>`;
+}
+async function loadBgFromFile(file){
+  const url=URL.createObjectURL(file);
+  const img=new Image();
+  await new Promise((res,rej)=>{img.onload=res;img.onerror=rej;img.src=url});
+  const W=1080,H=1920;
+  const c=document.createElement('canvas');c.width=W;c.height=H;
+  const ctx=c.getContext('2d');
+  const s=Math.max(W/img.naturalWidth,H/img.naturalHeight);
+  const w=img.naturalWidth*s,h=img.naturalHeight*s;
+  ctx.drawImage(img,(W-w)/2,(H-h)/2,w,h);
+  URL.revokeObjectURL(url);
+  return c.toDataURL('image/jpeg',0.9);
+}
+async function refreshPreview(){
+  if(generateLock)return;
+  generateLock=true;
+  try{
+    const blob=await generateQuoteImage(state.editedText||state.currentImageText,state.pdfName,state.authorName,state.imageStyle);
+    state.currentImageBlob=blob;
+    document.getElementById('previewImg').src=URL.createObjectURL(blob);
+    document.getElementById('shareImgBtn').onclick=()=>shareImage(blob);
+  }catch(e){toast('❌ '+e.message)}
+  finally{generateLock=false}
+}
+async function shareToX(blob){
+  const file=new File([blob],'quote.png',{type:'image/png'});
+  if(navigator.canShare&&navigator.canShare({files:[file]})){
+    try{await navigator.share({files:[file]})}
+    catch(e){if(e.name!=='AbortError')toast('تعذرت المشاركة')}
+  }else{
+    toast('مشاركة الملفات غير مدعومة هنا، استخدم 📤',2500);
+  }
+}
+function wireBgAndX(){
+  document.getElementById('bgBtn').addEventListener('click',()=>document.getElementById('bgInput').click());
+  document.getElementById('bgInput').addEventListener('change',async(e)=>{
+    const f=e.target.files[0];
+    if(!f)return;
+    try{
+      state.bgDataUrl=await loadBgFromFile(f);
+      toast('✅ تم تعيين الخلفية',1500);
+      await refreshPreview();
+    }catch(err){toast('❌ تعذر تحميل الصورة')}
+    e.target.value='';
+  });
+  document.getElementById('overlayRange').addEventListener('input',(e)=>{
+    state.overlayOpacity=e.target.value/100;
+  });
+  document.getElementById('overlayRange').addEventListener('change',refreshPreview);
+  document.getElementById('xShareBtn').addEventListener('click',()=>{
+    if(state.currentImageBlob)shareToX(state.currentImageBlob);
+  });
+}
+
+async function showQuoteImage(text,style){
+  if(generateLock)return;
+  generateLock=true;
+  const myId=++generateId;
+  document.querySelectorAll('.style-chip').forEach(c=>c.disabled=true);
+  setStatus('جاري توليد الصورة...');
+  try{
+    state.currentImageText=text;
+    state.editedText=text;
+    state.editMode=false;
+    state.currentVariantIdx=null;
+    const useStyle=style||state.imageStyle;
+    const blob=await generateQuoteImage(state.editedText,state.pdfName,state.authorName,useStyle,undefined,state.orientation);
+    if(myId!==generateId)return;
+    state.currentImageBlob=blob;
+    const url=URL.createObjectURL(blob);
+    document.getElementById('previewImg').src=url;
+    document.getElementById('previewImg').classList.remove('hidden');
+    document.getElementById('editPanel').classList.add('hidden');
+    document.getElementById('editQuoteBtn').classList.remove('hidden');
+    document.getElementById('videoBtn').classList.remove('hidden');
+    document.getElementById('durationBtn').classList.remove('hidden');
+    document.getElementById('animationBtn').classList.remove('hidden');
+    document.getElementById('regenBtn').classList.add('hidden');
+    document.getElementById('imgPreview').classList.remove('hidden');
+    document.getElementById('shareImgBtn').onclick=()=>shareImage(blob);
+    document.querySelectorAll('.style-chip').forEach(c=>c.classList.toggle('active',c.dataset.style===useStyle));
+    setStatus('تم توليد الصورة ✨','ok');
+  }catch(e){
+    if(myId===generateId){setStatus('فشل توليد الصورة','err');toast('❌ '+e.message)}
+  }finally{
+    generateLock=false;
+    document.querySelectorAll('.style-chip').forEach(c=>c.disabled=false);
+  }
+}
+
+function enterEditMode(){
+  state.editMode=true;
+  state.editedText=state.editedText||state.currentImageText;
+  document.getElementById('editTextarea').value=state.editedText;
+  document.getElementById('previewImg').classList.add('hidden');
+  document.getElementById('editPanel').classList.remove('hidden');
+  document.getElementById('editQuoteBtn').classList.add('hidden');
+  document.getElementById('videoBtn').classList.add('hidden');
+  document.getElementById('durationBtn').classList.add('hidden');
+  document.getElementById('animationBtn').classList.add('hidden');
+  document.getElementById('regenBtn').classList.remove('hidden');
+  updateToggleUI();
+}
+
+function updateToggleUI(){
+  const q=document.getElementById('toggleQuoteBtn');
+  const b=document.getElementById('toggleBookBtn');
+  const a=document.getElementById('toggleAuthorBtn');
+  q.classList.toggle('on',state.showQuote);q.classList.toggle('off',!state.showQuote);
+  b.classList.toggle('on',state.showBook);b.classList.toggle('off',!state.showBook);
+  a.classList.toggle('on',state.showAuthor);a.classList.toggle('off',!state.showAuthor);
+  q.textContent=(state.showQuote?'❝ ':'🚫 ')+'علامة';
+  b.textContent=(state.showBook?'📖 ':'🚫 ')+'الكتاب';
+  a.textContent=(state.showAuthor?'✍ ':'🚫 ')+'المؤلف';
+}
+
+async function regenerateCurrent(){
+  if(state.busy)return;
+  state.busy=true;
+  const newText=(document.getElementById('editTextarea').value||'').trim();
+  if(!newText){toast('❌ النص فارغ');state.busy=false;return}
+  state.editedText=newText;
+  setStatus('جاري إعادة التوليد...');
+  const tQ=document.getElementById('toggleQuoteBtn');
+  const tB=document.getElementById('toggleBookBtn');
+  const tA=document.getElementById('toggleAuthorBtn');
+  const rB=document.getElementById('regenBtn');
+  tQ.disabled=true;tB.disabled=true;tA.disabled=true;rB.disabled=true;
+  rB.textContent='⏳ جاري...';
+  try{
+    const blob=await generateQuoteImage(state.editedText,state.pdfName,state.authorName,state.imageStyle,undefined,state.orientation);
+    state.currentImageBlob=blob;
+    const url=URL.createObjectURL(blob);
+    document.getElementById('previewImg').src=url;
+    document.getElementById('previewImg').classList.remove('hidden');
+    document.getElementById('editPanel').classList.add('hidden');
+    document.getElementById('editQuoteBtn').classList.remove('hidden');
+    document.getElementById('videoBtn').classList.remove('hidden');
+    document.getElementById('durationBtn').classList.remove('hidden');
+    document.getElementById('animationBtn').classList.remove('hidden');
+    document.getElementById('regenBtn').classList.add('hidden');
+    document.getElementById('shareImgBtn').onclick=()=>shareImage(blob);
+    state.editMode=false;
+    setStatus('تم التوليد ✨','ok');
+  }catch(e){setStatus('فشل','err');toast('❌ '+e.message)}
+  finally{
+    tQ.disabled=false;tB.disabled=false;tA.disabled=false;rB.disabled=false;
+    rB.textContent='🎨 توليد';
+    state.busy=false;
+  }
+}
+
+function updateVideoProgress(percent,statusText){
+  document.getElementById('videoProgressBar').style.width=(percent*100).toFixed(1)+'%';
+  document.getElementById('videoPercent').textContent=Math.round(percent*100)+'%';
+  if(statusText)document.getElementById('videoStatus').textContent=statusText;
+}
+
+function pickBestMimeType(){
+  const candidates=[
+    'video/mp4;codecs=avc1.64001E','video/mp4;codecs=avc1.4D401E','video/mp4;codecs=avc1.42E01E',
+    'video/mp4;codecs=h264','video/mp4;codecs=avc1','video/mp4',
+    'video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm'
+  ];
+  for(const c of candidates){
+    try{if(MediaRecorder.isTypeSupported(c))return c}catch(e){}
+  }
+  return 'video/webm';
+}
+
+function canPlayVideoType(mimeType){
+  const v=document.createElement('video');
+  const result=v.canPlayType(mimeType);
+  return result==='probably'||result==='maybe';
+}
+
+async function generateQuoteVideo(rawText,style){
+  await ensureFonts();
+  const text=prepareQuoteText(rawText);
+  const W=1080,H=1920;
+  const config=STYLE_CONFIGS[style]||STYLE_CONFIGS.naskh;
+  const variant=config.variants[0];
+  const layout=computeOptimalLayout(text,W,H,config,variant);
+  const fontSize=layout.fontSize;
+  const originalLines=layout.lines;
+  const lineHeight=layout.lineHeight;
+  const topDivider=layout.topDivider;
+  const bottomDivider=layout.bottomDivider;
+  const totalH=originalLines.length*lineHeight;
+  const centerY=(topDivider+bottomDivider)/2;
+  let startY=centerY-totalH/2;
+  if(startY<topDivider+30)startY=topDivider+30;
+  if(startY+totalH>bottomDivider-30)startY=bottomDivider-30-totalH;
+  const wordSeq=[];
+  originalLines.forEach((line,li)=>{
+    if(!line.trim())return;
+    line.split(/\s+/).filter(w=>w).forEach(w=>wordSeq.push({line:li,word:w}));
+  });
+  const totalWords=wordSeq.length;
+  function buildPartialLines(upToWords){
+    const lineWords=new Array(originalLines.length).fill(null).map(()=>[]);
+    for(let i=0;i<upToWords&&i<totalWords;i++){
+      const w=wordSeq[i];
+      lineWords[w.line].push(w.word);
+    }
+    return lineWords.map(arr=>arr.join(' '));
+  }
+  function buildPartialLinesByLine(upToLines){
+    const result=new Array(originalLines.length).fill('');
+    let visibleCount=0;
+    for(let i=0;i<originalLines.length;i++){
+      if(!originalLines[i].trim()){result[i]='';continue}
+      if(visibleCount<upToLines)result[i]=originalLines[i];
+      visibleCount++;
+    }
+    return result;
+  }
+  function buildFrameSVG(frameState){
+    if(frameState.mode==='fade'){
+      return buildQuoteSVG({
+        W,H,lines:originalLines,fontSize,lineHeight,startY,topDivider,bottomDivider,
+        bookName:state.showBook?state.pdfName:'',
+        authorName:state.showAuthor?state.authorName:'',
+        config,variant,showQuote:state.showQuote,showBook:state.showBook,showAuthor:state.showAuthor,
+        textOpacity:frameState.opacity
+      });
+    }
+    return buildQuoteSVG({
+      W,H,lines:frameState.lines,fontSize,lineHeight,startY,topDivider,bottomDivider,
+      bookName:state.showBook?state.pdfName:'',
+      authorName:state.showAuthor?state.authorName:'',
+      config,variant,showQuote:state.showQuote,showBook:state.showBook,showAuthor:state.showAuthor
+    });
+  }
+  const frameStates=[];
+  if(state.animationType===ANIM_WORD){
+    const MAX_FRAMES=40;
+    const step=Math.max(1,Math.ceil(totalWords/MAX_FRAMES));
+    const counts=[];
+    for(let i=0;i<=totalWords;i+=step)counts.push(i);
+    if(counts[counts.length-1]!==totalWords)counts.push(totalWords);
+    for(const c of counts)frameStates.push({mode:'word',wordCount:c,lines:buildPartialLines(c)});
+  }else if(state.animationType===ANIM_LINE){
+    const lineCount=originalLines.filter(l=>l.trim()).length;
+    for(let i=0;i<=lineCount;i++)frameStates.push({mode:'line',lineCount:i,lines:buildPartialLinesByLine(i)});
+  }else{
+    const STEPS=30;
+    for(let i=0;i<=STEPS;i++)frameStates.push({mode:'fade',opacity:i/STEPS});
+  }
+  const prerenderedImages=[];
+  const revokeUrls=[];
+  for(let i=0;i<frameStates.length;i++){
+    updateVideoProgress(0.05+(i/frameStates.length)*0.55,`رسم الإطارات... ${i+1}/${frameStates.length}`);
+    const {img,url}=await svgToImage(buildFrameSVG(frameStates[i]));
+    revokeUrls.push(url);
+    prerenderedImages.push(img);
+    await new Promise(r=>setTimeout(r,8));
+  }
+  const lastFrameCanvas=document.createElement('canvas');
+  lastFrameCanvas.width=W;lastFrameCanvas.height=H;
+  const lfc=lastFrameCanvas.getContext('2d');
+  lfc.fillStyle='#ffffff';lfc.fillRect(0,0,W,H);
+  lfc.drawImage(prerenderedImages[prerenderedImages.length-1],0,0,W,H);
+  state.lastFrameDataUrl=lastFrameCanvas.toDataURL('image/png');
+  const canvas=document.createElement('canvas');
+  canvas.width=W;canvas.height=H;
+  const ctx=canvas.getContext('2d');
+  ctx.fillStyle='#ffffff';ctx.fillRect(0,0,W,H);
+  ctx.drawImage(prerenderedImages[prerenderedImages.length-1],0,0,W,H);
+  const FPS=24;
+  const totalMs=state.videoDuration*1000;
+  const holdMs=Math.min(5000,totalMs-3000);
+  const animMs=totalMs-holdMs;
+  const stream=canvas.captureStream(FPS);
+  const mimeType=pickBestMimeType();
+  let recorder;
+  try{recorder=new MediaRecorder(stream,{mimeType,videoBitsPerSecond:5000000})}
+  catch(e){revokeUrls.forEach(u=>URL.revokeObjectURL(u));throw new Error('تعذر بدء التسجيل: '+e.message)}
+  const chunks=[];
+  recorder.ondataavailable=e=>{if(e.data&&e.data.size>0)chunks.push(e.data)};
+  function drawFrameAt(elapsedMs){
+    let frameIdx;
+    if(elapsedMs<animMs){
+      const progress=elapsedMs/animMs;
+      frameIdx=Math.min(prerenderedImages.length-1,Math.floor(progress*prerenderedImages.length));
+    }else frameIdx=prerenderedImages.length-1;
+    ctx.fillStyle='#ffffff';ctx.fillRect(0,0,W,H);
+    ctx.drawImage(prerenderedImages[frameIdx],0,0,W,H);
+  }
+  return new Promise((resolve,reject)=>{
+    try{
+      recorder.start();
+      const startTime=performance.now();
+      let lastFrame=-1;
+      function tick(){
+        const elapsed=performance.now()-startTime;
+        if(elapsed>=totalMs){try{recorder.stop()}catch(e){reject(e)}return}
+        const currentFrame=Math.floor((elapsed/1000)*FPS);
+        if(currentFrame!==lastFrame){lastFrame=currentFrame;drawFrameAt(elapsed)}
+        updateVideoProgress(0.6+(elapsed/totalMs)*0.4,`التسجيل... ${((elapsed/totalMs)*100).toFixed(0)}%`);
+        requestAnimationFrame(tick);
+      }
+      recorder.onstop=()=>{
+        try{
+          const blob=new Blob(chunks,{type:mimeType});
+          revokeUrls.forEach(u=>URL.revokeObjectURL(u));
+          resolve({blob,mimeType});
+        }catch(e){reject(e)}
+      };
+      recorder.onerror=()=>reject(new Error('فشل التسجيل'));
+      tick();
+    }catch(e){revokeUrls.forEach(u=>URL.revokeObjectURL(u));reject(e)}
+  });
+}
+
+async function shareVideoFile(blob,mimeType){
+  const ext=mimeType.includes('mp4')?'mp4':'webm';
+  const file=new File([blob],'quote.'+ext,{type:mimeType});
+  if(navigator.canShare&&navigator.canShare({files:[file]})){
+    try{await navigator.share({files:[file],title:'اقتباس'});return true}
+    catch(e){if(e.name==='AbortError')return true;return false}
+  }
+  return false;
+}
+
+function downloadVideoFile(blob,mimeType){
+  const ext=mimeType.includes('mp4')?'mp4':'webm';
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download='quote-'+Date.now()+'.'+ext;
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url),2000);
+}
+
+async function handleVideoGeneration(){
+  if(videoLock)return;
+  videoLock=true;
+  if(typeof MediaRecorder==='undefined'||!HTMLCanvasElement.prototype.captureStream){
+    videoLock=false;toast('❌ المتصفح لا يدعم توليد الفيديو');return;
+  }
+  const totalMs=state.videoDuration*1000;
+  const holdMs=Math.min(5000,totalMs-3000);
+  const animMs=totalMs-holdMs;
+  const infoEl=document.getElementById('videoDurationInfo');
+  if(infoEl)infoEl.innerHTML='⏱️ المدة: '+state.videoDuration+' ث (<b>'+(animMs/1000).toFixed(1)+' ث حركة</b> + '+(holdMs/1000).toFixed(1)+' ث ثبات)<br>🎬 الحركة: '+ANIMATION_NAMES[state.animationType];
+  document.getElementById('videoOverlay').classList.remove('hidden');
+  updateVideoProgress(0,'جاري التحضير...');
+  try{
+    const {blob,mimeType}=await generateQuoteVideo(state.editedText||state.currentImageText,state.imageStyle);
+    state.currentVideoBlob=blob;
+    state.currentVideoMime=mimeType;
+    document.getElementById('videoOverlay').classList.add('hidden');
+    if(state.currentVideoUrl)URL.revokeObjectURL(state.currentVideoUrl);
+    state.currentVideoUrl=URL.createObjectURL(blob);
+    const playable=canPlayVideoType(mimeType);
+    const isMp4=mimeType.includes('mp4');
+    const videoEl=document.getElementById('videoPlayer');
+    const fallbackImg=document.getElementById('videoFallback');
+    const formatBadge=document.getElementById('formatBadge');
+    const hint=document.getElementById('videoHint');
+    if(playable){
+      videoEl.src=state.currentVideoUrl;
+      videoEl.style.display='block';
+      fallbackImg.style.display='none';
+      formatBadge.textContent='✅ '+(isMp4?'MP4':'WebM')+' — '+state.videoDuration+' ث ('+ANIMATION_NAMES[state.animationType]+')';
+      formatBadge.className='format-badge ok';
+      hint.innerHTML=isMp4?'💡 <b>لحفظ الفيديو في تطبيق الصور:</b><br>اضغط "📤 مشاركة" ثم اختر <b>"حفظ الفيديو"</b> من قائمة iOS.':'💡 <b>للمشاركة:</b> اضغط "📤 مشاركة" لإرساله على WhatsApp/Telegram.<br>⚠️ لحفظه في الصور، استخدم CapCut.';
+    }else{
+      videoEl.style.display='none';
+      fallbackImg.src=state.lastFrameDataUrl;
+      fallbackImg.style.display='block';
+      formatBadge.textContent='⚠️ '+(isMp4?'MP4':'WebM')+' — '+state.videoDuration+' ث';
+      formatBadge.className='format-badge warn';
+      hint.innerHTML='💡 <b>الفيديو جاهز لكن Safari لا يمكنه معاينته.</b><br>• للمشاركة المباشرة: اضغط "📤 مشاركة".<br>• للحفظ في الصور: اضغط "💾 حفظ في الملفات" ثم افتحه في <b>CapCut</b>.';
+    }
+    document.getElementById('videoPreview').classList.remove('hidden');
+    document.getElementById('shareVideoBtn').onclick=async()=>{
+      toast('📤 جاري فتح قائمة المشاركة...',1500);
+      const ok=await shareVideoFile(blob,mimeType);
+      if(!ok)toast('❌ تعذر — استخدم "حفظ في الملفات"',2500);
+    };
+    document.getElementById('downloadVideoBtn').onclick=()=>{
+      downloadVideoFile(blob,mimeType);
+      toast('✅ تم حفظ الفيديو في الملفات',1800);
+    };
+    document.getElementById('closeVideoBtn').onclick=closeVideoPreview;
+  }catch(e){
+    document.getElementById('videoOverlay').classList.add('hidden');
+    toast('❌ فشل توليد الفيديو: '+e.message,3000);
+  }finally{videoLock=false}
+}
+
+function closeVideoPreview(){
+  const videoEl=document.getElementById('videoPlayer');
+  try{videoEl.pause()}catch(e){}
+  videoEl.src='';
+  if(state.currentVideoUrl){URL.revokeObjectURL(state.currentVideoUrl);state.currentVideoUrl=''}
+  document.getElementById('videoPreview').classList.add('hidden');
+}
+
+function closePreview(){document.getElementById('imgPreview').classList.add('hidden')}
+
+async function shareImage(blob){
+  const file=new File([blob],'quote.png',{type:'image/png'});
+  if(navigator.canShare&&navigator.canShare({files:[file]})){
+    try{await navigator.share({files:[file]})}
+    catch(e){if(e.name!=='AbortError')toast('تعذرت المشاركة')}
+  }else{
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url;a.download='quote.png';a.click();
+    toast('تم تحميل الصورة');
+  }
+}
+
+function downloadBlob(blob,filename){
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download=filename;
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url),2000);
+}
+
+async function saveBothOrientations(){
+  if(!state.editedText&&!state.currentImageText){toast('❌ لا يوجد نص');return}
+  const btn=document.getElementById('saveBothBtn');
+  const txt=state.editedText||state.currentImageText;
+  const stamp=Date.now();
+  btn.disabled=true;btn.textContent='⏳ جاري...';
+  try{
+    toast('📐 جاري توليد الطولي...',2500);
+    const portraitBlob=await generateQuoteImage(txt,state.pdfName,state.authorName,state.imageStyle,state.currentVariantIdx,'portrait');
+    downloadBlob(portraitBlob,'quote-portrait-'+stamp+'.png');
+    await new Promise(r=>setTimeout(r,600));
+    toast('📐 جاري توليد العرضي...',2500);
+    const landscapeBlob=await generateQuoteImage(txt,state.pdfName,state.authorName,state.imageStyle,state.currentVariantIdx,'landscape');
+    downloadBlob(landscapeBlob,'quote-landscape-'+stamp+'.png');
+    toast('✅ تم حفظ النسختين',2500);
+  }catch(e){toast('❌ '+e.message,3000)}
+  finally{btn.disabled=false;btn.textContent='📐 حفظ الاثنين'}
+}
+
+function findQuote(text,book){return state.library.find(q=>q.text===text&&q.book===book)}
+function isFavorite(text,book){const q=findQuote(text,book);return !!(q&&q.favorite)}
+function ensureInLibrary(text,book){
+  let q=findQuote(text,book);
+  if(!q){
+    q={id:(crypto&&crypto.randomUUID)?crypto.randomUUID():String(Date.now()+Math.random()),text,book,favorite:false,date:new Date().toISOString()};
+    state.library.push(q);saveLibrary();
+  }
+  return q;
+}
+function toggleFavorite(text,book){const q=ensureInLibrary(text,book);q.favorite=!q.favorite;saveLibrary()}
+function openLibrary(){document.getElementById('library').classList.remove('hidden');renderLibrary('all')}
+function closeLibrary(){document.getElementById('library').classList.add('hidden')}
+
+function renderLibrary(filter){
+  const list=document.getElementById('libList');list.innerHTML='';
+  let items=filter==='fav'?state.library.filter(q=>q.favorite):[...state.library];
+  items.sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  document.getElementById('libCount').textContent=items.length+' اقتباس';
+  document.getElementById('filterAll').className='btn '+(filter==='all'?'btn-purple':'btn-gray');
+  document.getElementById('filterFav').className='btn '+(filter==='fav'?'btn-purple':'btn-gray');
+  if(!items.length){list.innerHTML='<div style="text-align:center;color:#a0aec0;padding:30px;">لا توجد اقتباسات بعد</div>';return}
+  items.forEach(q=>{
+    const card=document.createElement('div');
+    card.className='card';
+    const dateStr=(q.date||'').substring(0,10);
+    card.innerHTML=`
+      <div class="card-head">
+        <button class="star ${q.favorite?'on':''}">${q.favorite?'★':'☆'}</button>
+        <span style="font-size:11px;color:#4a5568;">📕 ${escapeHtml(q.book||'')} · ${dateStr}</span>
+      </div>
+      <div class="q-text">${escapeHtml(q.text)}</div>
+      <div class="card-actions">
+        <button class="btn btn-green" data-act="copy">📋</button>
+        <button class="btn btn-blue" data-act="share">📤</button>
+        <button class="btn btn-purple" data-act="image">📸</button>
+        <button class="btn btn-red" data-act="del">🗑</button>
+      </div>`;
+    card.querySelector('.star').addEventListener('click',()=>{q.favorite=!q.favorite;saveLibrary();renderLibrary(filter)});
+    card.querySelector('[data-act="copy"]').addEventListener('click',()=>copyQuote(q.text));
+    card.querySelector('[data-act="share"]').addEventListener('click',()=>shareQuote(q.text));
+    card.querySelector('[data-act="image"]').addEventListener('click',()=>showQuoteImage(q.text));
+    card.querySelector('[data-act="del"]').addEventListener('click',()=>{
+      if(confirm('حذف؟')){state.library=state.library.filter(x=>x.id!==q.id);saveLibrary();renderLibrary(filter)}
+    });
+    list.appendChild(card);
+  });
+}
+
+function renderQuotes(){
+  const container=document.getElementById('quotes');
+  container.innerHTML='';
+  if(!state.quotes.length)return;
+  const header=document.createElement('div');
+  header.style.cssText='font-size:13px;color:#4a5568;text-align:right;padding:8px;margin-bottom:8px;line-height:1.7;';
+  header.textContent=state.currentHeader;
+  container.appendChild(header);
+  state.quotes.forEach((quote,i)=>{
+    const card=document.createElement('div');
+    card.className='card';
+    const isFav=isFavorite(quote,state.pdfName);
+    card.innerHTML=`
+      <div class="card-head">
+        <button class="star ${isFav?'on':''}" data-idx="${i}">${isFav?'★':'☆'}</button>
+        <span class="q-num">❝ اقتباس ${i+1}</span>
+      </div>
+      <div class="q-text">${escapeHtml(quote)}</div>
+      <div class="card-actions">
+        <button class="btn btn-green" data-action="copy" data-idx="${i}">📋 نسخ</button>
+        <button class="btn btn-blue" data-action="share" data-idx="${i}">📤 مشاركة</button>
+        <button class="btn btn-purple" data-action="image" data-idx="${i}">📸 صورة</button>
+      </div>`;
+    container.appendChild(card);
+  });
+  container.querySelectorAll('.star').forEach(b=>b.addEventListener('click',()=>{
+    toggleFavorite(state.quotes[parseInt(b.dataset.idx)],state.pdfName);renderQuotes();
+  }));
+  container.querySelectorAll('[data-action]').forEach(b=>b.addEventListener('click',()=>{
+    const idx=parseInt(b.dataset.idx);
+    const t=state.quotes[idx];
+    if(b.dataset.action==='copy')copyQuote(t);
+    else if(b.dataset.action==='share')shareQuote(t);
+    else showQuoteImage(t);
+  }));
+}
+
+function escapeHtml(s){return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+async function copyQuote(text){try{await navigator.clipboard.writeText(text);toast('✅ تم النسخ')}catch(e){toast('❌ فشل النسخ')}}
+async function shareQuote(text){
+  if(navigator.share){try{await navigator.share({text})}catch(e){if(e.name!=='AbortError')copyQuote(text)}}
+  else copyQuote(text);
+}
+
+async function generate(){
+  if(state.busy)return;
+  const apiKey=document.getElementById('apiKey').value.trim();
+  if(!apiKey){toast('❌ أدخل مفتاح OpenRouter');return}
+  if(!state.pdfFile){toast('❌ اختر PDF أولاً');return}
+  saveApiKey(apiKey);
+  state.busy=true;
+  const genBtn=document.getElementById('genBtn');
+  genBtn.disabled=true;genBtn.textContent='⏳ جاري الاستخراج...';
+  try{
+    setStatus('جاري قراءة PDF...');showProgress(true,0);
+    const {text}=await extractPdfText(state.pdfFile);
+    let cleaned=truncateAtLine(cleanPdfText(text),12000);
+    if(!cleaned.trim()){setStatus('لم يُعثر على نص','err');return}
+    setStatus('جاري الاتصال بالنموذج...');
+    const {text:answer,model}=await callOpenRouter(apiKey,state.pdfName,cleaned,state.quoteCount);
+    const quotes=parseQuotes(answer);
+    state.quotes=quotes;
+    state.currentHeader='📕 '+state.pdfName+'\n🤖 '+model.split('/').pop();
+    quotes.forEach(q=>ensureInLibrary(q,state.pdfName));
+    renderQuotes();
+    setStatus(`✓ ${quotes.length} اقتباسات — اضغط مجدداً`,'ok');
+    genBtn.textContent='🔄 اقتباسات جديدة';
+  }catch(e){
+    setStatus('حدث خطأ','err');
+    document.getElementById('quotes').innerHTML='<div class="card" style="color:#c53030;text-align:center;padding:20px;">حدث خطأ:<br><br>'+escapeHtml(e.message)+'</div>';
+  }finally{
+    state.busy=false;genBtn.disabled=false;showProgress(false);
+  }
+}
+
+function initApp(){
+  try{
+    loadLibrary();loadApiKey();
+    ensureFonts().catch(()=>{});
+
+    document.getElementById('pickPdfBtn').addEventListener('click',()=>document.getElementById('pdfInput').click());
+    document.getElementById('pdfInput').addEventListener('change',(e)=>{
+      const f=e.target.files[0];if(!f)return;
+      state.pdfFile=f;state.pdfName=f.name;
+      if(!document.getElementById('bookName').value){
+        document.getElementById('bookName').value=f.name.replace(/\.pdf$/i,'');
+        state.pdfName=f.name.replace(/\.pdf$/i,'');
+      }
+      setStatus('✓ '+f.name,'ok');
+      state.quotes=[];document.getElementById('quotes').innerHTML='';
+    });
+    document.getElementById('genBtn').addEventListener('click',generate);
+
+    document.getElementById('countBtn').addEventListener('click',function(){
+      const opts=[3,5,7,10];
+      let idx=opts.indexOf(state.quoteCount);
+      idx=(idx+1)%opts.length;
+      state.quoteCount=opts[idx];
+      this.textContent='🔢 '+state.quoteCount;
+    });
+
+    document.getElementById('styleBtn').addEventListener('click',function(){
+      let i=STYLE_ORDER.indexOf(state.imageStyle);
+      i=(i+1)%STYLE_ORDER.length;
+      state.imageStyle=STYLE_ORDER[i];
+      saveStyle(state.imageStyle);
+      this.textContent='🎨 '+STYLE_NAMES[state.imageStyle].split(' ').slice(1).join(' ');
+      toast('النمط: '+STYLE_NAMES[state.imageStyle]);
+    });
+
+    document.getElementById('libBtn').addEventListener('click',openLibrary);
+    document.getElementById('filterAll').addEventListener('click',()=>renderLibrary('all'));
+    document.getElementById('filterFav').addEventListener('click',()=>renderLibrary('fav'));
+
+    document.getElementById('bookName').addEventListener('input',e=>state.pdfName=e.target.value||'كتاب');
+    document.getElementById('authorName').addEventListener('input',e=>{state.authorName=e.target.value;saveAuthor(e.target.value)});
+
+    document.querySelectorAll('.style-chip').forEach(chip=>{
+      chip.addEventListener('click',async()=>{
+        if(generateLock)return;
+        state.imageStyle=chip.dataset.style;
+        saveStyle(state.imageStyle);
+        state.currentVariantIdx=null;
+        document.getElementById('styleBtn').textContent='🎨 '+STYLE_NAMES[state.imageStyle].split(' ').slice(1).join(' ');
+        await showQuoteImage(state.editedText||state.currentImageText,state.imageStyle);
+      });
+    });
+
+    document.getElementById('orientPortrait').addEventListener('click',async()=>{
+      if(state.orientation==='portrait')return;
+      state.orientation='portrait';
+      saveOrientation(state.orientation);
+      updateOrientationUI();
+      if(state.currentImageText||state.editedText){
+        await showQuoteImage(state.editedText||state.currentImageText,state.imageStyle);
+      }
+    });
+    document.getElementById('orientLandscape').addEventListener('click',async()=>{
+      if(state.orientation==='landscape')return;
+      state.orientation='landscape';
+      saveOrientation(state.orientation);
+      updateOrientationUI();
+      if(state.currentImageText||state.editedText){
+        await showQuoteImage(state.editedText||state.currentImageText,state.imageStyle);
+      }
+    });
+
+    document.getElementById('editQuoteBtn').addEventListener('click',enterEditMode);
+    document.getElementById('regenBtn').addEventListener('click',regenerateCurrent);
+    document.getElementById('videoBtn').addEventListener('click',handleVideoGeneration);
+    document.getElementById('saveBothBtn').addEventListener('click',saveBothOrientations);
+
+    document.getElementById('durationBtn').addEventListener('click',function(){
+      let idx=DURATION_OPTIONS.indexOf(state.videoDuration);
+      idx=(idx+1)%DURATION_OPTIONS.length;
+      state.videoDuration=DURATION_OPTIONS[idx];
+      saveDuration(state.videoDuration);
+      updateDurationButton();
+      toast('⏱️ المدة: '+state.videoDuration+' ثوانٍ',1200);
+    });
+
+    document.getElementById('animationBtn').addEventListener('click',function(){
+      let idx=ANIMATION_OPTIONS.indexOf(state.animationType);
+      idx=(idx+1)%ANIMATION_OPTIONS.length;
+      state.animationType=ANIMATION_OPTIONS[idx];
+      saveAnimation(state.animationType);
+      updateAnimationButton();
+      toast('🎬 الحركة: '+ANIMATION_NAMES[state.animationType],1400);
+    });
+
+    document.getElementById('toggleQuoteBtn').addEventListener('click',async()=>{
+      state.showQuote=!state.showQuote;updateToggleUI();
+      toast(state.showQuote?'❝ إظهار علامة الاقتباس':'🚫 إخفاء علامة الاقتباس',1200);
+      await regenerateCurrent();
+    });
+    document.getElementById('toggleBookBtn').addEventListener('click',async()=>{
+      state.showBook=!state.showBook;updateToggleUI();
+      toast(state.showBook?'📖 إظهار اسم الكتاب':'🚫 إخفاء اسم الكتاب',1200);
+      await regenerateCurrent();
+    });
+    document.getElementById('toggleAuthorBtn').addEventListener('click',async()=>{
+      state.showAuthor=!state.showAuthor;updateToggleUI();
+      toast(state.showAuthor?'✍ إظهار المؤلف':'🚫 إخفاء المؤلف',1200);
+      await regenerateCurrent();
+    });
+
+    updateToggleUI();
+    updateDurationButton();
+    updateAnimationButton();
+    updateOrientationUI();
+    wireBgAndX();
+  }catch(e){showErr('init: '+e.message)}
+}
+
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',initApp);
+else initApp();
+</script>
+</body>
+</html>
