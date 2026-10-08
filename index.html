@@ -93,6 +93,15 @@ h1{font-size:18px;text-align:center;margin-bottom:16px;font-weight:700}
   <input id="apiKey" class="field" type="password" placeholder="مفتاح OpenRouter (sk-or-v1-...)">
   <input id="bookName" class="field" type="text" placeholder="اسم الكتاب (اختياري)">
   <input id="authorName" class="field" type="text" placeholder="اسم المؤلف (اختياري)">
+  <select id="modelSelect" class="field">
+    <option value="auto">🤖 النموذج: تلقائي (احتياطي)</option>
+    <option value="google/gemini-2.5-flash">🚀 Gemini 2.5 Flash (غالباً الأسرع)</option>
+    <option value="openai/gpt-oss-120b">⚡ GPT-OSS 120B</option>
+    <option value="meta-llama/llama-3.3-70b-instruct">🦙 Llama 3.3 70B</option>
+  </select>
+  <input id="wmText" class="field" type="text" placeholder="نص العلامة المائية">
+  <button id="wmToggleBtn" class="btn btn-gray" style="width:100%;margin-bottom:10px;">💧 إخفاء العلامة المائية</button>
+  <button id="dateToggleBtn" class="btn btn-gray" style="width:100%;margin-bottom:10px;">📅 إخفاء التاريخ</button>
   <button id="pickPdfBtn" class="btn btn-dark" style="width:100%;margin-bottom:10px;">📕 اختيار ملف PDF</button>
   <input id="pdfInput" type="file" accept=".pdf" style="display:none;">
   <div class="row">
@@ -250,7 +259,7 @@ let state={
   showQuote:true,showBook:true,showAuthor:true,
   currentVariantIdx:null,
   currentVideoBlob:null,currentVideoMime:'',currentVideoUrl:'',
-  lastFrameDataUrl:'',videoDuration:10,animationType:ANIM_WORD,bgDataUrl:'',overlayOpacity:0.45,
+  lastFrameDataUrl:'',videoDuration:10,animationType:ANIM_WORD,bgDataUrl:'',overlayOpacity:0.45,showWatermark:true,showDate:true,watermarkText:'تصميم / sab3-77',selectedModel:'auto',
   orientation:'portrait'
 };
 
@@ -314,24 +323,44 @@ function updateOrientationUI(){
 }
 
 async function extractPdfText(file){
-  if(!pdfjsReady)throw new Error('pdf.js لم يُحمّل');
-  const arrayBuffer=await file.arrayBuffer();
-  const pdf=await pdfjsLib.getDocument({data:arrayBuffer}).promise;
-  const totalPages=pdf.numPages;
-  const MAX=30;
-  let start=1;
-  if(totalPages>MAX)start=Math.floor(Math.random()*(totalPages-MAX))+1;
-  const end=Math.min(start+MAX-1,totalPages);
-  let text='';
-  for(let i=start;i<=end;i++){
-    const page=await pdf.getPage(i);
-    const content=await page.getTextContent();
-    const pageText=content.items.map(item=>item.str).join(' ');
-    text+=`[صفحة ${i}]\n${pageText.trim()}\n\n`;
-    showProgress(true,Math.round(((i-start+1)/(end-start+1))*100));
+  if(!pdfjsReady)throw new Error('pdf.js لم يُحمّل، أعد تحميل الصفحة');
+  let pdf;
+  try{
+    pdf=await pdfjsLib.getDocument({data:await file.arrayBuffer(),useSystemFonts:true}).promise;
+  }catch(e){
+    if(e&&e.name==='PasswordException')throw new Error('الملف محمي بكلمة مرور، أزلها ثم أعد المحاولة');
+    throw new Error('تعذر فتح ملف PDF: '+(e&&e.message?e.message:e));
+  }
+  const total=pdf.numPages;
+  const WANT=30;
+  // نبدأ من صفحة عشوائية ثم نكمل للأمام ثم للخلف، ونتجاوز الصفحات الفارغة أو التالفة
+  const start=total>WANT?Math.floor(Math.random()*(total-WANT))+1:1;
+  const order=[];
+  for(let i=start;i<=total;i++)order.push(i);
+  for(let i=start-1;i>=1;i--)order.push(i);
+  let text='';let used=0;
+  for(const pn of order){
+    if(used>=WANT)break;
+    try{
+      const page=await pdf.getPage(pn);
+      const content=await page.getTextContent();
+      let pageText='';
+      for(const it of content.items){
+        pageText+=(it.str||'')+(it.hasEOL?'\n':' ');
+      }
+      // NFKC يحوّل أشكال العرض العربية (ligatures) إلى حروف عادية
+      pageText=pageText.normalize('NFKC').replace(/[ \t]+/g,' ').trim();
+      if(pageText.length<15)continue;
+      text+=`[صفحة ${pn}]\n${pageText}\n\n`;
+      used++;
+    }catch(e){continue}
+    showProgress(true,Math.round(used/WANT*100));
   }
   showProgress(false);
-  return {text,totalPages};
+  if(!text.trim()){
+    throw new Error('لم يُعثر على نص قابل للقراءة في الملف. غالباً هو PDF ممسوح (صور). جرّب ملفاً نصياً أو استخدم نسخة قابلة للتحديد');
+  }
+  return {text,totalPages:total};
 }
 
 function cleanPdfText(text){
@@ -391,6 +420,11 @@ function prepareQuoteText(text){
 }
 
 const MODELS=['openai/gpt-oss-120b','google/gemini-2.5-flash','meta-llama/llama-3.3-70b-instruct'];
+function getModelOrder(){
+  const sel=state.selectedModel;
+  if(sel&&sel!=='auto'&&MODELS.includes(sel))return [sel,...MODELS.filter(m=>m!==sel)];
+  return MODELS;
+}
 
 async function callOpenRouter(apiKey,bookName,bookText,count){
   const seed=Math.floor(Math.random()*9000)+1000;
@@ -423,7 +457,7 @@ async function callOpenRouter(apiKey,bookName,bookText,count){
 نص الكتاب:
 ${bookText}`;
   const errors=[];
-  for(const model of MODELS){
+  for(const model of getModelOrder()){
     setStatus(`(${model.split('/').pop()}) جاري الاتصال...`);
     try{
       const res=await fetch('https://openrouter.ai/api/v1/chat/completions',{
@@ -692,12 +726,20 @@ function buildQuoteSVG(opts){
     const authorText='\u270D '+authorName;
     s+=`<text x="${cx}" y="${authorY}" font-family="${FONT_FAMILY}" font-weight="400" font-style="italic" font-size="28" fill="${config.authorColor}" text-anchor="middle" direction="rtl">${escapeXml(authorText)}</text>`;
   }
-  const wmPositions=[
+  function todayArabic(){
+  try{
+    return new Intl.DateTimeFormat('ar-EG-u-ca-gregory-nu-latn',{day:'numeric',month:'long',year:'numeric'}).format(new Date());
+  }catch(e){
+    return new Date().toLocaleDateString('ar');
+  }
+}
+const wmPositions=[
     {x:W*0.25,y:H*0.16},{x:W*0.75,y:H*0.34},
     {x:W*0.28,y:H*0.56},{x:W*0.72,y:H*0.76}
   ];
-  for(const p of wmPositions){
-    s+=`<text transform="translate(${p.x.toFixed(0)} ${p.y.toFixed(0)}) rotate(-22)" font-family="${FONT_FAMILY}" font-weight="700" font-size="34" fill="${config.watermarkColor}" opacity="0.12" text-anchor="middle" direction="rtl">تصميم / sab3-77</text>`;
+  if(state.showDate)s+=`<text x="${cx}" y="${H-100}" font-family="${FONT_FAMILY}" font-weight="400" font-size="26" fill="${config.authorColor}" text-anchor="middle" direction="rtl">📅 ${escapeXml(todayArabic())}</text>`;
+  if(state.showWatermark)for(const p of wmPositions){
+    s+=`<text transform="translate(${p.x.toFixed(0)} ${p.y.toFixed(0)}) rotate(-22)" font-family="${FONT_FAMILY}" font-weight="700" font-size="34" fill="${config.watermarkColor}" opacity="0.12" text-anchor="middle" direction="rtl">${escapeXml(state.watermarkText)}</text>`;
   }
   s+=closeG;
   return s+'</svg>';
@@ -947,8 +989,9 @@ async function generateQuoteImage(rawText,bookName,authorName,style,forceVariant
     const authorOffY=isPortrait?110:80;
     if(state.showBook&&bookName)svg+=`<text x="${cx}" y="${lineY+bookOffY}" font-family="-apple-system, ${FONT_FAMILY}" font-weight="700" font-size="32" fill="#0f172a" text-anchor="middle" direction="rtl">📖 ${escapeXml(bookName)}</text>`;
     if(state.showAuthor&&authorName)svg+=`<text x="${cx}" y="${lineY+authorOffY}" font-family="-apple-system, ${FONT_FAMILY}" font-size="26" fill="#64748b" text-anchor="middle" direction="rtl">✍ ${escapeXml(authorName)}</text>`;
+    if(state.showDate)svg+=`<text x="${cx}" y="${lineY+160}" font-family="-apple-system, ${FONT_FAMILY}" font-size="26" fill="#64748b" text-anchor="middle" direction="rtl">📅 ${escapeXml(todayArabic())}</text>`;
     const wm=[{x:W*0.25,y:H*0.18},{x:W*0.75,y:H*0.36},{x:W*0.28,y:H*0.58},{x:W*0.72,y:H*0.78}];
-    for(const p of wm)svg+=`<text transform="translate(${p.x.toFixed(0)} ${p.y.toFixed(0)}) rotate(-22)" font-family="-apple-system, system-ui" font-weight="700" font-size="34" fill="#0f172a" opacity="0.07" text-anchor="middle">sab3-77</text>`;
+    if(state.showWatermark)for(const p of wm)svg+=`<text transform="translate(${p.x.toFixed(0)} ${p.y.toFixed(0)}) rotate(-22)" font-family="-apple-system, system-ui" font-weight="700" font-size="34" fill="#0f172a" opacity="0.07" text-anchor="middle">${escapeXml(state.watermarkText)}</text>`;
     svg+='</svg>';
   }else{
     svg=buildQuoteSVG({W,H,lines,fontSize,lineHeight,startY,topDivider,bottomDivider,bookName,authorName,config,variant,showQuote:state.showQuote,showBook:state.showBook,showAuthor:state.showAuthor});
@@ -1044,6 +1087,55 @@ function wireBgAndX(){
   });
 }
 
+function loadExtraSettings(){
+  try{
+    const m=localStorage.getItem('quotes_model');if(m)state.selectedModel=m;
+    const wt=localStorage.getItem('quotes_wm_text');if(wt!==null)state.watermarkText=wt;
+    const ws=localStorage.getItem('quotes_wm_show');if(ws!==null)state.showWatermark=ws==='1';
+  }catch(e){}
+}
+function wireExtraSettings(){
+  const ms=document.getElementById('modelSelect');
+  ms.value=state.selectedModel||'auto';
+  ms.addEventListener('change',()=>{
+    state.selectedModel=ms.value;
+    try{localStorage.setItem('quotes_model',ms.value)}catch(e){}
+    toast('النموذج: '+ms.options[ms.selectedIndex].text,1500);
+  });
+  const wt=document.getElementById('wmText');
+  wt.value=state.watermarkText;
+  wt.addEventListener('input',()=>{
+    state.watermarkText=wt.value;
+    try{localStorage.setItem('quotes_wm_text',wt.value)}catch(e){}
+  });
+  wt.addEventListener('change',async()=>{
+    if(!document.getElementById('imgPreview').classList.contains('hidden'))await refreshPreview();
+  });
+  const wb=document.getElementById('wmToggleBtn');
+  const paintWm=()=>{
+    wb.textContent=state.showWatermark?'💧 إخفاء العلامة المائية':'💧 إظهار العلامة المائية';
+    wb.className='btn '+(state.showWatermark?'btn-gray':'btn-green');
+  };
+  paintWm();
+  wb.addEventListener('click',async()=>{
+    state.showWatermark=!state.showWatermark;
+    try{localStorage.setItem('quotes_wm_show',state.showWatermark?'1':'0')}catch(e){}
+    paintWm();
+    if(!document.getElementById('imgPreview').classList.contains('hidden'))await refreshPreview();
+  });
+}
+function wireDateToggle(){
+  try{const d=localStorage.getItem('quotes_date_show');if(d!==null)state.showDate=d==='1';}catch(e){}
+  const b=document.getElementById('dateToggleBtn');
+  const paint=()=>{b.textContent=state.showDate?'📅 إخفاء التاريخ':'📅 إظهار التاريخ';b.className='btn '+(state.showDate?'btn-gray':'btn-green')};
+  paint();
+  b.addEventListener('click',async()=>{
+    state.showDate=!state.showDate;
+    try{localStorage.setItem('quotes_date_show',state.showDate?'1':'0')}catch(e){}
+    paint();
+    if(!document.getElementById('imgPreview').classList.contains('hidden'))await refreshPreview();
+  });
+}
 async function showQuoteImage(text,style){
   if(generateLock)return;
   generateLock=true;
@@ -1671,6 +1763,9 @@ function initApp(){
     updateDurationButton();
     updateAnimationButton();
     updateOrientationUI();
+    loadExtraSettings();
+    wireExtraSettings();
+    wireDateToggle();
     wireBgAndX();
   }catch(e){showErr('init: '+e.message)}
 }
